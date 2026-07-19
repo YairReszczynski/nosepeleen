@@ -16,7 +16,7 @@ const sections = [
   },
   {
     title: "2. Sumar una compra",
-    body: "Cuando compren algo en cuotas, vayan a Sumar. Pueden escribirlo a mano o pegar el aviso desde la aplicación del banco (ya casi no llegan SMS).",
+    body: "Cuando compren algo en cuotas, vayan a Sumar. Pueden escribirlo a mano o pegar el aviso desde la aplicación del banco (ya casi no llegan SMS). Si ya venían pagando (ej: van en la cuota 7 de 12), activen “Ya venían pagando cuotas” y pongan el mes de la primera cuota.",
     href: "/nueva",
     cta: "Ir a Sumar",
   },
