@@ -35,6 +35,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-body), system-ui, sans-serif;
+  min-height: 100vh;
   min-height: 100dvh;
 }
 
@@ -92,8 +93,9 @@ body {
   }
 }
 
-.animate-in {
-  animation: float-in 0.45s ease-out both;
+.min-h-screen-safe {
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .breathe {

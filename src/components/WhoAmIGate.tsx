@@ -9,7 +9,7 @@ export function WhoAmIGate({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-dvh items-center justify-center px-6 text-center">
+      <div className="flex min-h-screen-safe items-center justify-center px-6 text-center">
         <p className="text-[var(--muted)]">Cargando la agenda…</p>
       </div>
     );
@@ -17,7 +17,7 @@ export function WhoAmIGate({ children }: { children: React.ReactNode }) {
 
   if (!currentUser) {
     return (
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center px-5 py-10">
+      <div className="relative mx-auto flex min-h-screen-safe w-full max-w-lg flex-col justify-center px-5 py-10">
         <div className="atmosphere" aria-hidden />
         <div className="relative z-10 space-y-6 animate-in">
           <header className="space-y-3 text-center">

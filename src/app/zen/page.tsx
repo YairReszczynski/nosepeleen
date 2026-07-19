@@ -64,7 +64,7 @@ export default function ZenPage() {
   }
 
   return (
-    <div className="animate-in flex min-h-[70dvh] flex-col items-center justify-center space-y-8 text-center">
+    <div className="animate-in flex min-h-[70vh] flex-col items-center justify-center space-y-8 text-center">
       <header className="space-y-2">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--mint)]">
           Modo anti-pelea

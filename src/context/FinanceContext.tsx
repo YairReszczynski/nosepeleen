@@ -118,6 +118,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     setSyncStatus("connecting");
 
+    // Si Firebase cuelga en Safari viejo / red mala, no dejar pantalla eterna
+    const timeout = setTimeout(() => {
+      if (cancelled) return;
+      setSyncStatus("error");
+      setSynced(false);
+      setReady(true);
+    }, 10000);
+
     void (async () => {
       try {
         saveHouseCode(FAMILY_SYNC_ID);
@@ -139,12 +147,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           setSynced(false);
         }
       } finally {
+        clearTimeout(timeout);
         if (!cancelled) setReady(true);
       }
     })();
 
     return () => {
       cancelled = true;
+      clearTimeout(timeout);
     };
   }, [cloudEnabled, bootKey]);
 
