@@ -23,13 +23,12 @@ import {
 import { currentMonthKey } from "@/lib/finance";
 import { FAMILY_SYNC_ID, saveHouseCode } from "@/lib/houseCode";
 import {
-  createCloudHousehold,
   fetchCloudHousehold,
   isFirebaseConfigured,
   saveCloudHousehold,
   subscribeCloudHousehold,
 } from "@/lib/firebase";
-import { pickRicherOrMerge } from "@/lib/merge";
+import { isRemoteNewer, pickLatest, touchData } from "@/lib/merge";
 import {
   loadDeviceUser,
   saveDeviceUser,
@@ -81,7 +80,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const [synced, setSynced] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("local");
   const [currentUser, setCurrentUserState] = useState<DeviceUser | null>(null);
-  const applyingRemote = useRef(false);
   const skipNextCloudSave = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cloudEnabled = isFirebaseConfigured();
@@ -97,7 +95,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     setCurrentUserState(user);
   }, []);
 
-  // Carga local + nubeización (con merge para no pisar datos)
   useEffect(() => {
     const local = loadData();
     setData(local);
@@ -117,17 +114,11 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         const remote = await fetchCloudHousehold(FAMILY_SYNC_ID);
         if (cancelled) return;
 
-        if (!remote) {
-          await createCloudHousehold(FAMILY_SYNC_ID, local);
-          setData(local);
-        } else {
-          const merged = pickRicherOrMerge(local, remote);
-          applyingRemote.current = true;
-          setData(merged);
-          await saveCloudHousehold(FAMILY_SYNC_ID, merged);
-          queueMicrotask(() => {
-            applyingRemote.current = false;
-          });
+        const { data: winner, shouldUpload } = pickLatest(local, remote);
+        skipNextCloudSave.current = !shouldUpload;
+        setData(winner);
+        if (shouldUpload) {
+          await saveCloudHousehold(FAMILY_SYNC_ID, winner);
         }
 
         setSynced(true);
@@ -159,12 +150,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         FAMILY_SYNC_ID,
         (remote) => {
           setData((prev) => {
-            const merged = pickRicherOrMerge(prev, remote);
-            if (JSON.stringify(merged) === JSON.stringify(prev)) {
-              return prev;
-            }
+            if (!isRemoteNewer(prev, remote)) return prev;
             skipNextCloudSave.current = true;
-            return merged;
+            return remote;
           });
           setSyncStatus("synced");
         },
@@ -183,7 +171,6 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       skipNextCloudSave.current = false;
       return;
     }
-    if (applyingRemote.current) return;
 
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
@@ -198,7 +185,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   }, [data, ready, cloudEnabled, synced]);
 
   const update = useCallback((fn: (prev: AppData) => AppData) => {
-    setData(fn);
+    setData((prev) => touchData(fn(prev)));
   }, []);
 
   const value = useMemo<FinanceContextValue>(
@@ -332,8 +319,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           };
         }),
       exportJson: () => exportData(data),
-      importJson: (json) => setData(importData(json)),
-      resetAll: () => setData(createDefaultData()),
+      importJson: (json) => setData(touchData(importData(json))),
+      resetAll: () => setData(touchData(createDefaultData())),
     }),
     [
       ready,

@@ -1,59 +1,54 @@
-import type { AppData, PaymentMark } from "./types";
-import { createDefaultData } from "./storage";
+import type { AppData } from "./types";
 
-function contentScore(data: AppData): number {
-  return data.cards.length * 10 + data.purchases.length * 5 + data.payments.length;
+/** Marca la agenda como la versión más reciente. */
+export function touchData(data: AppData): AppData {
+  return { ...data, updatedAt: new Date().toISOString() };
 }
 
-function mergePayments(a: PaymentMark[], b: PaymentMark[]): PaymentMark[] {
-  const map = new Map<string, PaymentMark>();
-  for (const p of [...a, ...b]) {
-    const key = `${p.purchaseId}:${p.installmentNumber}`;
-    const prev = map.get(key);
-    if (!prev || (p.paidAt && p.paidAt > prev.paidAt)) {
-      map.set(key, p);
-    }
-  }
-  return Array.from(map.values());
+export function ensureUpdatedAt(data: AppData): AppData {
+  if (data.updatedAt) return data;
+  return touchData(data);
 }
 
-/** Une dos copias sin borrar lo que el otro teléfono ya tenía. */
-export function mergeAppData(local: AppData, remote: AppData): AppData {
-  const cardMap = new Map(local.cards.map((c) => [c.id, c]));
-  for (const c of remote.cards) {
-    if (!cardMap.has(c.id)) cardMap.set(c.id, c);
-  }
-
-  const purchaseMap = new Map(local.purchases.map((p) => [p.id, p]));
-  for (const p of remote.purchases) {
-    if (!purchaseMap.has(p.id)) purchaseMap.set(p.id, p);
-  }
-
-  const base = createDefaultData();
-  return {
-    version: 1,
-    household: {
-      mamaName:
-        remote.household.mamaName ||
-        local.household.mamaName ||
-        base.household.mamaName,
-      papaName:
-        remote.household.papaName ||
-        local.household.papaName ||
-        base.household.papaName,
-    },
-    cards: Array.from(cardMap.values()),
-    purchases: Array.from(purchaseMap.values()).sort((a, b) =>
-      b.createdAt.localeCompare(a.createdAt),
-    ),
-    payments: mergePayments(local.payments, remote.payments),
-  };
+function timeOf(data: AppData): number {
+  const t = Date.parse(data.updatedAt || "");
+  return Number.isFinite(t) ? t : 0;
 }
 
-export function pickRicherOrMerge(local: AppData, remote: AppData | null): AppData {
-  if (!remote) return local;
-  const merged = mergeAppData(local, remote);
-  // Si el merge quedó igual de rico o más, úsalo
-  if (contentScore(merged) >= contentScore(remote)) return merged;
-  return remote;
+/**
+ * Última escritura gana.
+ * Así un borrado no “revive” por un merge que vuelve a unir tarjetas.
+ */
+export function pickLatest(
+  local: AppData,
+  remote: AppData | null,
+): { data: AppData; shouldUpload: boolean } {
+  const localReady = ensureUpdatedAt(local);
+  if (!remote) {
+    return { data: localReady, shouldUpload: true };
+  }
+  const remoteReady = ensureUpdatedAt(remote);
+  if (timeOf(remoteReady) > timeOf(localReady)) {
+    return { data: remoteReady, shouldUpload: false };
+  }
+  if (timeOf(localReady) > timeOf(remoteReady)) {
+    return { data: localReady, shouldUpload: true };
+  }
+  // Empate: preferir la que tenga más contenido (arranque inicial)
+  const localScore =
+    localReady.cards.length +
+    localReady.purchases.length +
+    localReady.payments.length;
+  const remoteScore =
+    remoteReady.cards.length +
+    remoteReady.purchases.length +
+    remoteReady.payments.length;
+  if (localScore > remoteScore) {
+    return { data: touchData(localReady), shouldUpload: true };
+  }
+  return { data: remoteReady, shouldUpload: false };
+}
+
+export function isRemoteNewer(local: AppData, remote: AppData): boolean {
+  return timeOf(remote) > timeOf(local);
 }

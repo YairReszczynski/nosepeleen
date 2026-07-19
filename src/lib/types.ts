@@ -47,6 +47,8 @@ export type Household = {
 
 export type AppData = {
   version: 1;
+  /** ISO timestamp — última escritura gana en sync */
+  updatedAt: string;
   household: Household;
   cards: Card[];
   purchases: Purchase[];

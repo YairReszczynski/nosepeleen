@@ -82,7 +82,7 @@ export async function createCloudHousehold(
   await ensureAuth();
   const payload: CloudPayload = {
     ...data,
-    updatedAt: new Date().toISOString(),
+    updatedAt: data.updatedAt || new Date().toISOString(),
   };
   await setDoc(householdRef(code), payload);
 }
@@ -103,9 +103,10 @@ export async function saveCloudHousehold(
   await ensureAuth();
   const payload: CloudPayload = {
     ...data,
-    updatedAt: new Date().toISOString(),
+    updatedAt: data.updatedAt || new Date().toISOString(),
   };
-  await setDoc(householdRef(code), payload, { merge: true });
+  // Sin merge: el documento completo reemplaza (así sí se borran tarjetas)
+  await setDoc(householdRef(code), payload);
 }
 
 export function subscribeCloudHousehold(
@@ -136,6 +137,10 @@ function sanitizeCloudData(raw: Record<string, unknown>): AppData {
     : [];
   return {
     version: 1,
+    updatedAt:
+      typeof raw.updatedAt === "string"
+        ? raw.updatedAt
+        : new Date().toISOString(),
     household: {
       mamaName: household.mamaName || base.household.mamaName,
       papaName: household.papaName || base.household.papaName,

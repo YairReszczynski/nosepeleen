@@ -25,6 +25,7 @@ export function createId(): string {
 export function createDefaultData(): AppData {
   return {
     version: 1,
+    updatedAt: new Date().toISOString(),
     household: { ...defaultHousehold },
     cards: [],
     purchases: [],
@@ -40,7 +41,6 @@ export function loadData(): AppData {
     const parsed = JSON.parse(raw) as AppData;
     if (parsed.version !== 1) return createDefaultData();
     const household = { ...defaultHousehold, ...parsed.household };
-    // Migrar nombres genéricos viejos
     if (household.mamaName === "Mamá") household.mamaName = "Pamela";
     if (household.papaName === "Papá") household.papaName = "Itae";
     const cards = (parsed.cards ?? []).map((c) => ({
@@ -57,6 +57,7 @@ export function loadData(): AppData {
     return {
       ...createDefaultData(),
       ...parsed,
+      updatedAt: parsed.updatedAt || new Date().toISOString(),
       household,
       cards,
       purchases,
@@ -82,6 +83,7 @@ export function importData(json: string): AppData {
   }
   return {
     version: 1,
+    updatedAt: parsed.updatedAt || new Date().toISOString(),
     household: { ...defaultHousehold, ...parsed.household },
     cards: parsed.cards ?? [],
     purchases: parsed.purchases ?? [],
