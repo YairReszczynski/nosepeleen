@@ -5,7 +5,7 @@ import {
   getDoc,
   getFirestore,
   onSnapshot,
-  setDoc,
+  runTransaction,
   type Firestore,
   type Unsubscribe,
 } from "firebase/firestore";
@@ -60,7 +60,6 @@ async function ensureAuth(): Promise<void> {
   await authReady;
 }
 
-/** Firestore no acepta undefined: lo sacamos en profundidad. */
 export function stripUndefined<T>(value: T): T {
   if (Array.isArray(value)) {
     return value.map((item) => stripUndefined(item)) as T;
@@ -76,23 +75,21 @@ export function stripUndefined<T>(value: T): T {
   return value;
 }
 
-type CloudPayload = AppData;
-
 function householdRef(code: string) {
   const { db } = getFirebase();
   return doc(db, "households", code);
+}
+
+function timeOf(iso?: string): number {
+  const t = Date.parse(iso || "");
+  return Number.isFinite(t) ? t : 0;
 }
 
 export async function createCloudHousehold(
   code: string,
   data: AppData,
 ): Promise<void> {
-  await ensureAuth();
-  const payload = stripUndefined({
-    ...data,
-    updatedAt: data.updatedAt || new Date().toISOString(),
-  });
-  await setDoc(householdRef(code), payload);
+  await saveCloudHousehold(code, data);
 }
 
 export async function fetchCloudHousehold(
@@ -104,16 +101,34 @@ export async function fetchCloudHousehold(
   return normalizeAppData(snap.data() as AppData);
 }
 
+/**
+ * Solo escribe si lo local es igual o más nuevo que lo remoto.
+ * Evita que un save viejo en vuelo revive tarjetas borradas.
+ */
 export async function saveCloudHousehold(
   code: string,
   data: AppData,
-): Promise<void> {
+): Promise<"saved" | "skipped"> {
   await ensureAuth();
+  const { db } = getFirebase();
+  const ref = householdRef(code);
   const payload = stripUndefined({
     ...data,
     updatedAt: data.updatedAt || new Date().toISOString(),
   });
-  await setDoc(householdRef(code), payload);
+  const localTime = timeOf(payload.updatedAt);
+
+  return runTransaction(db, async (transaction) => {
+    const snap = await transaction.get(ref);
+    if (snap.exists()) {
+      const remoteAt = snap.data()?.updatedAt as string | undefined;
+      if (timeOf(remoteAt) > localTime) {
+        return "skipped" as const;
+      }
+    }
+    transaction.set(ref, payload);
+    return "saved" as const;
+  });
 }
 
 export async function subscribeCloudHousehold(

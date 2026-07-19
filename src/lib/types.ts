@@ -53,6 +53,9 @@ export type AppData = {
   cards: Card[];
   purchases: Purchase[];
   payments: PaymentMark[];
+  /** IDs borrados: no deben reaparecer aunque llegue data vieja */
+  deletedCardIds: string[];
+  deletedPurchaseIds: string[];
 };
 
 export type MonthInstallment = {

@@ -14,16 +14,16 @@ function ShellInner({ children }: { children: React.ReactNode }) {
       <div className="atmosphere" aria-hidden />
       <main className="relative z-10 px-4 pb-28 pt-5">
         {currentUser && (
-          <div className="mb-4 flex items-center justify-between gap-2 rounded-2xl border border-[var(--line)] bg-white/70 px-3 py-2">
+          <div className="mb-3 flex items-center justify-between gap-2">
             <p className="text-sm text-[var(--muted)]">
-              Entraste como{" "}
-              <strong className="text-[var(--ink)]">
+              Como{" "}
+              <span className="font-semibold text-[var(--ink)]">
                 {personLabel(currentUser, data.household)}
-              </strong>
+              </span>
             </p>
             <button
               type="button"
-              className="text-xs font-bold text-[var(--mint)]"
+              className="text-xs font-semibold text-[var(--muted)] underline underline-offset-2"
               onClick={() => {
                 const other = currentUser === "mama" ? "papa" : "mama";
                 if (

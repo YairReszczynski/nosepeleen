@@ -15,6 +15,7 @@ export default function TarjetasPage() {
   const [kind, setKind] = useState<CardKind>("credito");
   const [dueDay, setDueDay] = useState("10");
   const [showForm, setShowForm] = useState(false);
+  const [editNames, setEditNames] = useState(false);
   const [msg, setMsg] = useState("");
 
   if (!ready) return null;
@@ -46,75 +47,88 @@ export default function TarjetasPage() {
     setMsg("");
   }
 
+  function askRemove(cardName: string, id: string) {
+    if (
+      confirm(
+        `¿Borrar ${cardName}? También se van las compras de esa tarjeta.`,
+      )
+    ) {
+      removeCard(id);
+    }
+  }
+
   return (
-    <div className="animate-in space-y-6">
+    <div className="animate-in space-y-5">
       <header>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--accent-hot)]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--accent-hot)]">
           Billetera
         </p>
-        <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-extrabold tracking-tight">
+        <h1 className="mt-1 font-[family-name:var(--font-display)] text-[2rem] font-extrabold leading-none tracking-tight">
           Tarjetas
         </h1>
-        <p className="mt-2 text-[15px] leading-relaxed text-[var(--muted)]">
-          Crédito o débito. Cada compra se anota en un plástico y al final del
-          mes se ve claro qué toca pagar.
+        <p className="mt-2 max-w-[22rem] text-[14px] leading-snug text-[var(--muted)]">
+          Crédito o débito. Cada compra queda en un plástico y al mes queda
+          claro qué hay que pagar.
         </p>
+        <div className="mt-3">
+          <HouseSyncPanel />
+        </div>
       </header>
 
-      <HouseSyncPanel />
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-[15px] text-[var(--ink)]">
+          <span className="font-semibold">{data.household.mamaName}</span>
+          <span className="mx-1.5 text-[var(--muted)]">·</span>
+          <span className="font-semibold">{data.household.papaName}</span>
+        </p>
+        <button
+          type="button"
+          className="text-sm font-medium text-[var(--muted)] underline underline-offset-2"
+          onClick={() => setEditNames((v) => !v)}
+        >
+          {editNames ? "Listo" : "Cambiar nombres"}
+        </button>
+      </div>
 
-      <section className="grid grid-cols-2 gap-3 rounded-2xl border border-[var(--line)] bg-white/60 p-4">
-        <div>
-          <label className="label" htmlFor="mama">
-            Nombre 1
-          </label>
-          <input
-            id="mama"
-            className="field"
-            value={data.household.mamaName}
-            onChange={(e) => updateHousehold({ mamaName: e.target.value })}
-          />
+      {editNames && (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label" htmlFor="mama">
+              Nombre 1
+            </label>
+            <input
+              id="mama"
+              className="field"
+              value={data.household.mamaName}
+              onChange={(e) => updateHousehold({ mamaName: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="label" htmlFor="papa">
+              Nombre 2
+            </label>
+            <input
+              id="papa"
+              className="field"
+              value={data.household.papaName}
+              onChange={(e) => updateHousehold({ papaName: e.target.value })}
+            />
+          </div>
         </div>
-        <div>
-          <label className="label" htmlFor="papa">
-            Nombre 2
-          </label>
-          <input
-            id="papa"
-            className="field"
-            value={data.household.papaName}
-            onChange={(e) => updateHousehold({ papaName: e.target.value })}
-          />
-        </div>
-      </section>
+      )}
 
       <div className="space-y-3">
         {data.cards.map((card) => (
-          <div key={card.id} className="space-y-2">
-            <CardVisual
-              name={card.name}
-              lastFour={card.lastFour}
-              color={card.color}
-              ownerLabel={personLabel(card.owner, data.household)}
-              dueDay={card.dueDay}
-              kind={card.kind}
-            />
-            <button
-              type="button"
-              className="btn btn-danger w-full py-2 text-sm"
-              onClick={() => {
-                if (
-                  confirm(
-                    `¿Borrar ${card.name}? También se van las compras de esa tarjeta.`,
-                  )
-                ) {
-                  removeCard(card.id);
-                }
-              }}
-            >
-              Quitar tarjeta
-            </button>
-          </div>
+          <CardVisual
+            key={card.id}
+            name={card.name}
+            lastFour={card.lastFour}
+            color={card.color}
+            ownerLabel={personLabel(card.owner, data.household)}
+            dueDay={card.dueDay}
+            kind={card.kind}
+            onRemove={() => askRemove(card.name, card.id)}
+          />
         ))}
       </div>
 
@@ -125,10 +139,7 @@ export default function TarjetasPage() {
       )}
 
       {showForm ? (
-        <form
-          onSubmit={onSubmit}
-          className="space-y-3 rounded-2xl border border-[var(--line)] bg-white/70 p-4"
-        >
+        <form onSubmit={onSubmit} className="space-y-3 border-t border-[var(--line)] pt-4">
           <div>
             <label className="label" htmlFor="cname">
               Nombre
@@ -227,7 +238,7 @@ export default function TarjetasPage() {
       )}
 
       {msg && (
-        <p className="text-center text-sm font-semibold text-[var(--mint)]">
+        <p className="text-center text-sm font-semibold text-[var(--accent-hot)]">
           {msg}
         </p>
       )}

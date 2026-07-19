@@ -2,56 +2,46 @@
 
 import { useFinance } from "@/context/FinanceContext";
 
-/** Solo muestra el estado: la agenda se sincroniza sola, sin códigos. */
+/** Chip compacto de estado de sync — sin caja enorme. */
 export function HouseSyncPanel() {
   const { cloudEnabled, syncStatus, retrySync } = useFinance();
 
   if (!cloudEnabled) {
     return (
-      <section className="rounded-2xl border border-dashed border-[var(--line-strong)] bg-white/40 p-4">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-bold">
-          Agenda compartida
-        </h2>
-        <p className="mt-1 text-[15px] leading-relaxed text-[var(--muted)]">
-          La nube todavía no está conectada. Cuando Firebase esté listo, Pamela
-          e Itae van a ver lo mismo automáticamente en los dos teléfonos.
-        </p>
-      </section>
+      <p className="text-sm text-[var(--muted)]">
+        Agenda solo en este teléfono por ahora.
+      </p>
     );
   }
 
-  const label =
-    syncStatus === "synced"
-      ? "Agenda compartida activa ✓"
-      : syncStatus === "connecting"
-        ? "Conectando la agenda…"
-        : syncStatus === "error"
-          ? "Sin conexión — revisen internet"
-          : "Preparando…";
-
-  const detail =
-    syncStatus === "synced"
-      ? "Lo que agregue Pamela lo ve Itae, y al revés. No hay que hacer nada más."
-      : syncStatus === "error"
-        ? "Los cambios se guardan en este teléfono. Toquen Reconectar cuando haya internet."
-        : "Un segundo…";
-
-  return (
-    <section className="space-y-2 rounded-2xl border border-[var(--line)] bg-white/70 p-4">
-      <h2 className="font-[family-name:var(--font-display)] text-lg font-bold">
-        Agenda de los dos
-      </h2>
-      <p className="text-sm font-bold text-[var(--mint)]">{label}</p>
-      <p className="text-[15px] leading-relaxed text-[var(--muted)]">{detail}</p>
-      {syncStatus === "error" && (
+  if (syncStatus === "error") {
+    return (
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <p className="text-[var(--accent-hot)]">Sin conexión a la agenda</p>
         <button
           type="button"
-          className="btn btn-accent w-full text-sm"
+          className="font-semibold text-[var(--ink)] underline underline-offset-2"
           onClick={retrySync}
         >
           Reconectar
         </button>
-      )}
-    </section>
-  );
+      </div>
+    );
+  }
+
+  if (syncStatus === "connecting") {
+    return (
+      <p className="text-sm text-[var(--muted)]">Conectando agenda…</p>
+    );
+  }
+
+  if (syncStatus === "synced") {
+    return (
+      <p className="text-sm text-[var(--mint)]">
+        Agenda compartida activa · los dos ven lo mismo
+      </p>
+    );
+  }
+
+  return null;
 }

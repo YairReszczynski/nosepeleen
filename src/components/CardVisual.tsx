@@ -6,6 +6,7 @@ type Props = {
   dueDay?: number;
   kind?: "credito" | "debito";
   compact?: boolean;
+  onRemove?: () => void;
 };
 
 export function CardVisual({
@@ -16,6 +17,7 @@ export function CardVisual({
   dueDay,
   kind = "credito",
   compact,
+  onRemove,
 }: Props) {
   return (
     <div
@@ -35,7 +37,7 @@ export function CardVisual({
         aria-hidden
       />
       <div className="relative flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="font-[family-name:var(--font-display)] text-lg font-bold tracking-tight">
             {name}
           </p>
@@ -43,14 +45,26 @@ export function CardVisual({
             {ownerLabel} · {kind === "debito" ? "Débito" : "Crédito"}
           </p>
         </div>
-        <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider">
-          •• {lastFour}
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider">
+            •• {lastFour}
+          </span>
+          {onRemove && (
+            <button
+              type="button"
+              aria-label={`Quitar ${name}`}
+              className="rounded-full bg-black/25 px-2.5 py-1 text-[11px] font-semibold text-white/90 transition hover:bg-black/40"
+              onClick={onRemove}
+            >
+              Quitar
+            </button>
+          )}
+        </div>
       </div>
       {!compact && dueDay != null && (
-        <p className="relative mt-6 text-xs text-white/80">
+        <p className="relative mt-5 text-xs text-white/80">
           {kind === "debito" ? "Día de pago" : "Vence el día"}{" "}
-          <strong className="text-white">{dueDay}</strong>
+          <span className="font-semibold text-white">{dueDay}</span>
         </p>
       )}
     </div>

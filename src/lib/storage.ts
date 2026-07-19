@@ -26,12 +26,13 @@ export function createId(): string {
 export function createDefaultData(): AppData {
   return {
     version: 1,
-    // Epoch: un teléfono nuevo NO debe pisar la nube por tener "ahora"
     updatedAt: EPOCH_UPDATED_AT,
     household: { ...defaultHousehold },
     cards: [],
     purchases: [],
     payments: [],
+    deletedCardIds: [],
+    deletedPurchaseIds: [],
   };
 }
 
@@ -40,7 +41,33 @@ function clampDay(n: number): number {
   return Math.min(28, Math.max(1, Math.round(n)));
 }
 
-export function normalizeAppData(raw: Partial<AppData> | null | undefined): AppData {
+/** Aplica tombstones para que un borrado no “reviva”. */
+export function applyTombstones(data: AppData): AppData {
+  const deletedCards = new Set(data.deletedCardIds ?? []);
+  const deletedPurchases = new Set(data.deletedPurchaseIds ?? []);
+
+  const cards = data.cards.filter((c) => !deletedCards.has(c.id));
+  const purchases = data.purchases.filter(
+    (p) => !deletedPurchases.has(p.id) && !deletedCards.has(p.cardId),
+  );
+  const purchaseIds = new Set(purchases.map((p) => p.id));
+  const payments = data.payments.filter((pay) =>
+    purchaseIds.has(pay.purchaseId),
+  );
+
+  return {
+    ...data,
+    cards,
+    purchases,
+    payments,
+    deletedCardIds: Array.from(deletedCards),
+    deletedPurchaseIds: Array.from(deletedPurchases),
+  };
+}
+
+export function normalizeAppData(
+  raw: Partial<AppData> | null | undefined,
+): AppData {
   const base = createDefaultData();
   if (!raw || raw.version !== 1) return base;
 
@@ -73,7 +100,7 @@ export function normalizeAppData(raw: Partial<AppData> | null | undefined): AppD
     return next;
   });
 
-  return {
+  return applyTombstones({
     version: 1,
     updatedAt:
       typeof raw.updatedAt === "string" && raw.updatedAt
@@ -83,7 +110,13 @@ export function normalizeAppData(raw: Partial<AppData> | null | undefined): AppD
     cards,
     purchases,
     payments,
-  };
+    deletedCardIds: Array.from(
+      new Set([...(raw.deletedCardIds ?? [])]),
+    ),
+    deletedPurchaseIds: Array.from(
+      new Set([...(raw.deletedPurchaseIds ?? [])]),
+    ),
+  });
 }
 
 export function loadData(): AppData {
@@ -116,4 +149,20 @@ export function importData(json: string): AppData {
 export function suggestCardColor(existing: Card[]): string {
   const used = new Set(existing.map((c) => c.color));
   return CARD_COLORS.find((c) => !used.has(c)) ?? CARD_COLORS[0];
+}
+
+/** Une tombstones de dos copias (los borrados se acumulan). */
+export function mergeTombstones(a: AppData, b: AppData): AppData {
+  return applyTombstones({
+    ...a,
+    deletedCardIds: Array.from(
+      new Set([...(a.deletedCardIds ?? []), ...(b.deletedCardIds ?? [])]),
+    ),
+    deletedPurchaseIds: Array.from(
+      new Set([
+        ...(a.deletedPurchaseIds ?? []),
+        ...(b.deletedPurchaseIds ?? []),
+      ]),
+    ),
+  });
 }
