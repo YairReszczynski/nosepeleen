@@ -4,7 +4,7 @@ import { useFinance } from "@/context/FinanceContext";
 
 /** Solo muestra el estado: la agenda se sincroniza sola, sin códigos. */
 export function HouseSyncPanel() {
-  const { cloudEnabled, syncStatus } = useFinance();
+  const { cloudEnabled, syncStatus, retrySync } = useFinance();
 
   if (!cloudEnabled) {
     return (
@@ -33,7 +33,7 @@ export function HouseSyncPanel() {
     syncStatus === "synced"
       ? "Lo que agregue Pamela lo ve Itae, y al revés. No hay que hacer nada más."
       : syncStatus === "error"
-        ? "Los cambios se guardan en este teléfono y se suben cuando vuelva internet."
+        ? "Los cambios se guardan en este teléfono. Toquen Reconectar cuando haya internet."
         : "Un segundo…";
 
   return (
@@ -43,6 +43,15 @@ export function HouseSyncPanel() {
       </h2>
       <p className="text-sm font-bold text-[var(--mint)]">{label}</p>
       <p className="text-[15px] leading-relaxed text-[var(--muted)]">{detail}</p>
+      {syncStatus === "error" && (
+        <button
+          type="button"
+          className="btn btn-accent w-full text-sm"
+          onClick={retrySync}
+        >
+          Reconectar
+        </button>
+      )}
     </section>
   );
 }

@@ -4,7 +4,7 @@ import { useFinance } from "@/context/FinanceContext";
 import type { DeviceUser } from "@/lib/deviceUser";
 
 export function WhoAmIGate({ children }: { children: React.ReactNode }) {
-  const { ready, data, currentUser, setCurrentUser, syncStatus, cloudEnabled } =
+  const { ready, data, currentUser, setCurrentUser, syncStatus, cloudEnabled, retrySync } =
     useFinance();
 
   if (!ready) {
@@ -52,15 +52,26 @@ export function WhoAmIGate({ children }: { children: React.ReactNode }) {
           </div>
 
           {cloudEnabled && (
-            <p className="text-center text-xs font-semibold text-[var(--mint)]">
-              {syncStatus === "synced"
-                ? "Agenda en la nube lista ✓"
-                : syncStatus === "connecting"
-                  ? "Conectando…"
-                  : syncStatus === "error"
-                    ? "Sin nube por ahora (revisen internet)"
-                    : null}
-            </p>
+            <div className="space-y-2 text-center">
+              <p className="text-xs font-semibold text-[var(--mint)]">
+                {syncStatus === "synced"
+                  ? "Agenda en la nube lista ✓"
+                  : syncStatus === "connecting"
+                    ? "Conectando…"
+                    : syncStatus === "error"
+                      ? "Sin nube por ahora (revisen internet)"
+                      : null}
+              </p>
+              {syncStatus === "error" && (
+                <button
+                  type="button"
+                  className="btn btn-ghost text-sm"
+                  onClick={retrySync}
+                >
+                  Reconectar
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

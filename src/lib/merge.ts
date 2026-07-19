@@ -1,13 +1,18 @@
 import type { AppData } from "./types";
 
-/** Marca la agenda como la versión más reciente. */
+const EPOCH = "1970-01-01T00:00:00.000Z";
+
+/** Marca la agenda como la versión más reciente (solo tras ediciones reales). */
 export function touchData(data: AppData): AppData {
   return { ...data, updatedAt: new Date().toISOString() };
 }
 
-export function ensureUpdatedAt(data: AppData): AppData {
-  if (data.updatedAt) return data;
-  return touchData(data);
+export function contentScore(data: AppData): number {
+  return data.cards.length + data.purchases.length + data.payments.length;
+}
+
+export function isEmptyAgenda(data: AppData): boolean {
+  return contentScore(data) === 0;
 }
 
 function timeOf(data: AppData): number {
@@ -16,37 +21,52 @@ function timeOf(data: AppData): number {
 }
 
 /**
- * Última escritura gana.
- * Así un borrado no “revive” por un merge que vuelve a unir tarjetas.
+ * Elige entre local y remoto sin pisar la nube con un teléfono vacío.
+ * Última escritura gana cuando ambos tienen contenido.
  */
 export function pickLatest(
   local: AppData,
   remote: AppData | null,
 ): { data: AppData; shouldUpload: boolean } {
-  const localReady = ensureUpdatedAt(local);
   if (!remote) {
-    return { data: localReady, shouldUpload: true };
+    // Primera vez: subir lo local (aunque esté vacío, seed inicial)
+    return {
+      data: {
+        ...local,
+        updatedAt: local.updatedAt && local.updatedAt !== EPOCH
+          ? local.updatedAt
+          : new Date().toISOString(),
+      },
+      shouldUpload: true,
+    };
   }
-  const remoteReady = ensureUpdatedAt(remote);
-  if (timeOf(remoteReady) > timeOf(localReady)) {
-    return { data: remoteReady, shouldUpload: false };
+
+  const localEmpty = isEmptyAgenda(local);
+  const remoteEmpty = isEmptyAgenda(remote);
+
+  // Nunca dejar que un teléfono vacío borre la nube con datos
+  if (localEmpty && !remoteEmpty) {
+    return { data: remote, shouldUpload: false };
   }
-  if (timeOf(localReady) > timeOf(remoteReady)) {
-    return { data: localReady, shouldUpload: true };
+  if (!localEmpty && remoteEmpty) {
+    return { data: touchData(local), shouldUpload: true };
   }
-  // Empate: preferir la que tenga más contenido (arranque inicial)
-  const localScore =
-    localReady.cards.length +
-    localReady.purchases.length +
-    localReady.payments.length;
-  const remoteScore =
-    remoteReady.cards.length +
-    remoteReady.purchases.length +
-    remoteReady.payments.length;
-  if (localScore > remoteScore) {
-    return { data: touchData(localReady), shouldUpload: true };
+
+  const lt = timeOf(local);
+  const rt = timeOf(remote);
+
+  if (rt > lt) {
+    return { data: remote, shouldUpload: false };
   }
-  return { data: remoteReady, shouldUpload: false };
+  if (lt > rt) {
+    return { data: local, shouldUpload: true };
+  }
+
+  // Empate de tiempo: preferir la que tenga más contenido
+  if (contentScore(local) > contentScore(remote)) {
+    return { data: touchData(local), shouldUpload: true };
+  }
+  return { data: remote, shouldUpload: false };
 }
 
 export function isRemoteNewer(local: AppData, remote: AppData): boolean {

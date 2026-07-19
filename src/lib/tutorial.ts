@@ -1,4 +1,4 @@
-export const TUTORIAL_KEY = "nosepeleen-tutorial-v2";
+export const TUTORIAL_KEY = "nosepeleen-tutorial-v3";
 
 export type TutorialStep = {
   id: string;
@@ -19,8 +19,16 @@ export const tutorialSteps: TutorialStep[] = [
     cta: "Siguiente",
   },
   {
-    id: "tarjetas",
+    id: "quien",
     eyebrow: "Paso 1",
+    title: "Cada teléfono elige quién es",
+    body: "Al abrir, elijan “Soy Pamela” o “Soy Itae”. Así se sabe quién agregó cada tarjeta, compra o pago.",
+    tip: "Se elige una vez por teléfono. Después se puede cambiar arriba.",
+    cta: "Siguiente",
+  },
+  {
+    id: "tarjetas",
+    eyebrow: "Paso 2",
     title: "Primero agreguen las tarjetas",
     body: "En Tarjetas agreguen cada plástico de crédito o débito, los últimos 4 números y el día del mes en que suelen pagar.",
     tip: "Pónganle un nombre claro, por ejemplo: “Visa crédito”, “Débito del banco”.",
@@ -28,15 +36,15 @@ export const tutorialSteps: TutorialStep[] = [
   },
   {
     id: "compra",
-    eyebrow: "Paso 2",
+    eyebrow: "Paso 3",
     title: "Cuando compren algo",
-    body: "Vayan a Sumar. Sirve para cuotas y también para un solo pago (débito o de contado: pongan 1 cuota). Indiquen qué día del mes se paga. Pueden escribirlo a mano o pegar el aviso de la app del banco.",
+    body: "Vayan a Sumar. Sirve para cuotas y también para un solo pago (débito o de contado: pongan 1 cuota). Indiquen qué día del mes se paga.",
     tip: "Si ya venían pagando cuotas antiguas, activen “Ya venían pagando” e indiquen en qué cuota van.",
     cta: "Siguiente",
   },
   {
     id: "mes",
-    eyebrow: "Paso 3",
+    eyebrow: "Paso 4",
     title: "Cada mes, marquen lo pagado",
     body: "En Este mes aparece lo que toca pagar, con el día de pago. Toquen cuando lo paguen: se tacha y baja el pendiente.",
     tip: "Háganlo juntos mirando la misma pantalla. Fin de la discusión.",

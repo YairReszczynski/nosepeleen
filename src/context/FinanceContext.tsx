@@ -46,6 +46,7 @@ type FinanceContextValue = {
   cloudEnabled: boolean;
   currentUser: DeviceUser | null;
   setCurrentUser: (user: DeviceUser) => void;
+  retrySync: () => void;
   updateHousehold: (h: Partial<Household>) => void;
   addCard: (
     input: Omit<Card, "id" | "color" | "addedBy"> & {
@@ -80,8 +81,10 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const [synced, setSynced] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("local");
   const [currentUser, setCurrentUserState] = useState<DeviceUser | null>(null);
+  const [bootKey, setBootKey] = useState(0);
   const skipNextCloudSave = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveGeneration = useRef(0);
   const cloudEnabled = isFirebaseConfigured();
   const currentUserRef = useRef<DeviceUser | null>(null);
   currentUserRef.current = currentUser;
@@ -93,6 +96,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const setCurrentUser = useCallback((user: DeviceUser) => {
     saveDeviceUser(user);
     setCurrentUserState(user);
+  }, []);
+
+  const retrySync = useCallback(() => {
+    setSynced(false);
+    setSyncStatus("connecting");
+    setBootKey((k) => k + 1);
   }, []);
 
   useEffect(() => {
@@ -124,7 +133,11 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         setSynced(true);
         setSyncStatus("synced");
       } catch {
-        if (!cancelled) setSyncStatus("error");
+        if (!cancelled) {
+          setSyncStatus("error");
+          // Igual dejamos usar la app en local
+          setSynced(false);
+        }
       } finally {
         if (!cancelled) setReady(true);
       }
@@ -133,7 +146,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [cloudEnabled]);
+  }, [cloudEnabled, bootKey]);
 
   useEffect(() => {
     if (!ready) return;
@@ -144,26 +157,32 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     if (!ready || !cloudEnabled || !synced) return;
 
     let unsub = () => {};
+    let cancelled = false;
 
-    try {
-      unsub = subscribeCloudHousehold(
-        FAMILY_SYNC_ID,
-        (remote) => {
-          setData((prev) => {
-            if (!isRemoteNewer(prev, remote)) return prev;
-            skipNextCloudSave.current = true;
-            return remote;
-          });
-          setSyncStatus("synced");
-        },
-        () => setSyncStatus("error"),
-      );
-    } catch {
-      setSyncStatus("error");
-    }
+    void (async () => {
+      try {
+        unsub = await subscribeCloudHousehold(
+          FAMILY_SYNC_ID,
+          (remote) => {
+            setData((prev) => {
+              if (!isRemoteNewer(prev, remote)) return prev;
+              skipNextCloudSave.current = true;
+              return remote;
+            });
+            setSyncStatus("synced");
+          },
+          () => setSyncStatus("error"),
+        );
+      } catch {
+        if (!cancelled) setSyncStatus("error");
+      }
+    })();
 
-    return () => unsub();
-  }, [ready, cloudEnabled, synced]);
+    return () => {
+      cancelled = true;
+      unsub();
+    };
+  }, [ready, cloudEnabled, synced, bootKey]);
 
   useEffect(() => {
     if (!ready || !cloudEnabled || !synced) return;
@@ -173,10 +192,20 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     }
 
     if (saveTimer.current) clearTimeout(saveTimer.current);
+    const generation = ++saveGeneration.current;
+    const snapshot = data;
+
     saveTimer.current = setTimeout(() => {
-      void saveCloudHousehold(FAMILY_SYNC_ID, data)
-        .then(() => setSyncStatus("synced"))
-        .catch(() => setSyncStatus("error"));
+      void saveCloudHousehold(FAMILY_SYNC_ID, snapshot)
+        .then(() => {
+          // Ignorar saves viejos que terminaron tarde
+          if (generation !== saveGeneration.current) return;
+          setSyncStatus("synced");
+        })
+        .catch(() => {
+          if (generation !== saveGeneration.current) return;
+          setSyncStatus("error");
+        });
     }, 450);
 
     return () => {
@@ -198,6 +227,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       cloudEnabled,
       currentUser,
       setCurrentUser,
+      retrySync,
       updateHousehold: (h) =>
         update((prev) => ({
           ...prev,
@@ -216,7 +246,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
               dueDay: input.dueDay,
               kind: input.kind ?? "credito",
               color: input.color ?? suggestCardColor(prev.cards),
-              addedBy: currentUserRef.current ?? undefined,
+              ...(currentUserRef.current
+                ? { addedBy: currentUserRef.current }
+                : {}),
             },
           ],
         })),
@@ -226,17 +258,20 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           cards: prev.cards.map((c) => (c.id === id ? { ...c, ...patch } : c)),
         })),
       removeCard: (id) =>
-        update((prev) => ({
-          ...prev,
-          cards: prev.cards.filter((c) => c.id !== id),
-          purchases: prev.purchases.filter((p) => p.cardId !== id),
-          payments: prev.payments.filter((pay) => {
-            const purchase = prev.purchases.find(
-              (p) => p.id === pay.purchaseId,
-            );
-            return purchase?.cardId !== id;
-          }),
-        })),
+        update((prev) => {
+          const remainingPurchases = prev.purchases.filter(
+            (p) => p.cardId !== id,
+          );
+          const remainingIds = new Set(remainingPurchases.map((p) => p.id));
+          return {
+            ...prev,
+            cards: prev.cards.filter((c) => c.id !== id),
+            purchases: remainingPurchases,
+            payments: prev.payments.filter((pay) =>
+              remainingIds.has(pay.purchaseId),
+            ),
+          };
+        }),
       addPurchase: (input) =>
         update((prev) => {
           const installmentAmount =
@@ -248,12 +283,12 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
             Math.min(input.alreadyPaidCount ?? 0, input.installments),
           );
           const now = new Date().toISOString();
-          const who = currentUserRef.current ?? undefined;
+          const who = currentUserRef.current;
           const paidMarks = Array.from({ length: alreadyPaid }, (_, i) => ({
             purchaseId: id,
             installmentNumber: i + 1,
             paidAt: now,
-            markedBy: who,
+            ...(who ? { markedBy: who } : {}),
           }));
           return {
             ...prev,
@@ -272,8 +307,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
                   Math.max(1, input.paymentDay ?? 10),
                 ),
                 createdAt: now,
-                notes: input.notes,
-                addedBy: who,
+                ...(input.notes ? { notes: input.notes } : {}),
+                ...(who ? { addedBy: who } : {}),
               },
               ...prev.purchases,
             ],
@@ -305,6 +340,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
               ),
             };
           }
+          const who = currentUserRef.current;
           return {
             ...prev,
             payments: [
@@ -313,7 +349,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
                 purchaseId,
                 installmentNumber,
                 paidAt: new Date().toISOString(),
-                markedBy: currentUserRef.current ?? undefined,
+                ...(who ? { markedBy: who } : {}),
               },
             ],
           };
@@ -330,6 +366,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       cloudEnabled,
       currentUser,
       setCurrentUser,
+      retrySync,
       update,
     ],
   );

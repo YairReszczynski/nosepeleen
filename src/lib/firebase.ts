@@ -10,7 +10,7 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import type { AppData } from "./types";
-import { createDefaultData } from "./storage";
+import { normalizeAppData } from "./storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -50,25 +50,33 @@ async function ensureAuth(): Promise<void> {
   const { auth } = getFirebase();
   if (auth.currentUser) return;
   if (!authReady) {
-    authReady = signInAnonymously(auth).then(() => undefined);
+    authReady = signInAnonymously(auth)
+      .then(() => undefined)
+      .catch((err) => {
+        authReady = null;
+        throw err;
+      });
   }
   await authReady;
 }
 
-export function normalizeHouseCode(raw: string): string {
-  return raw
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9-]/g, "")
-    .replace(/-+/g, "-");
+/** Firestore no acepta undefined: lo sacamos en profundidad. */
+export function stripUndefined<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => stripUndefined(item)) as T;
+  }
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v === undefined) continue;
+      out[k] = stripUndefined(v);
+    }
+    return out as T;
+  }
+  return value;
 }
 
-export function generateHouseCode(): string {
-  const n = Math.floor(1000 + Math.random() * 9000);
-  return `AMOR-${n}`;
-}
-
-type CloudPayload = AppData & { updatedAt: string };
+type CloudPayload = AppData;
 
 function householdRef(code: string) {
   const { db } = getFirebase();
@@ -80,10 +88,10 @@ export async function createCloudHousehold(
   data: AppData,
 ): Promise<void> {
   await ensureAuth();
-  const payload: CloudPayload = {
+  const payload = stripUndefined({
     ...data,
     updatedAt: data.updatedAt || new Date().toISOString(),
-  };
+  });
   await setDoc(householdRef(code), payload);
 }
 
@@ -93,7 +101,7 @@ export async function fetchCloudHousehold(
   await ensureAuth();
   const snap = await getDoc(householdRef(code));
   if (!snap.exists()) return null;
-  return sanitizeCloudData(snap.data());
+  return normalizeAppData(snap.data() as AppData);
 }
 
 export async function saveCloudHousehold(
@@ -101,62 +109,26 @@ export async function saveCloudHousehold(
   data: AppData,
 ): Promise<void> {
   await ensureAuth();
-  const payload: CloudPayload = {
+  const payload = stripUndefined({
     ...data,
     updatedAt: data.updatedAt || new Date().toISOString(),
-  };
-  // Sin merge: el documento completo reemplaza (así sí se borran tarjetas)
+  });
   await setDoc(householdRef(code), payload);
 }
 
-export function subscribeCloudHousehold(
+export async function subscribeCloudHousehold(
   code: string,
   onData: (data: AppData) => void,
   onError?: (err: Error) => void,
-): Unsubscribe {
+): Promise<Unsubscribe> {
+  await ensureAuth();
   const { db } = getFirebase();
-  void ensureAuth();
   return onSnapshot(
     doc(db, "households", code),
     (snap) => {
       if (!snap.exists()) return;
-      onData(sanitizeCloudData(snap.data()));
+      onData(normalizeAppData(snap.data() as AppData));
     },
     (err) => onError?.(err),
   );
-}
-
-function sanitizeCloudData(raw: Record<string, unknown>): AppData {
-  const base = createDefaultData();
-  const household = (raw.household as AppData["household"]) ?? base.household;
-  const cards = Array.isArray(raw.cards)
-    ? (raw.cards as AppData["cards"]).map((c) => ({
-        ...c,
-        kind: c.kind === "debito" ? ("debito" as const) : ("credito" as const),
-      }))
-    : [];
-  return {
-    version: 1,
-    updatedAt:
-      typeof raw.updatedAt === "string"
-        ? raw.updatedAt
-        : new Date().toISOString(),
-    household: {
-      mamaName: household.mamaName || base.household.mamaName,
-      papaName: household.papaName || base.household.papaName,
-    },
-    cards,
-    purchases: Array.isArray(raw.purchases)
-      ? (raw.purchases as AppData["purchases"]).map((p) => ({
-          ...p,
-          paymentDay:
-            typeof p.paymentDay === "number" && p.paymentDay >= 1
-              ? p.paymentDay
-              : 10,
-        }))
-      : [],
-    payments: Array.isArray(raw.payments)
-      ? (raw.payments as AppData["payments"])
-      : [],
-  };
 }
