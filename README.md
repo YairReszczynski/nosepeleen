@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# No Se Peleen
 
-## Getting Started
+El amor supera las cuotas.
 
-First, run the development server:
+App web móvil para que Pamela e Itae lleven **una sola agenda** de compras en cuotas.
+
+## Desarrollo local
 
 ```bash
+npm install
+cp .env.example .env.local
+# Completá las keys de Firebase en .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Firebase + Netlify (para el celu)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Pieza | Para qué |
+| --- | --- |
+| **Netlify** | Hosting: abren `https://…netlify.app` en el navegador del celular |
+| **Firebase** | Nube: los dos celulares ven y editan lo mismo en tiempo real |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Firebase (una sola vez)
 
-## Learn More
+1. Entrá a [Firebase Console](https://console.firebase.google.com/) → crear proyecto `nosepeleen`
+2. **Authentication** → Sign-in method → habilitar **Anonymous**
+3. **Firestore Database** → Create database (modo producción) → pegá las reglas de `firestore.rules`
+4. **Project settings** → Add app → Web → copiá la config
+5. Completá `.env.local` con esas keys (mismo formato que `.env.example`)
 
-To learn more about Next.js, take a look at the following resources:
+### 2. Netlify
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Subí el repo a GitHub
+2. En [Netlify](https://app.netlify.com/) → Add new site → Import from Git
+3. Build command: `npm run build` (ya está en `netlify.toml`)
+4. En Site settings → Environment variables, agregá las mismas `NEXT_PUBLIC_FIREBASE_*`
+5. Deploy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. En el celular de tus papás
 
-## Deploy on Vercel
+1. Abren la URL de Netlify
+2. Van a **Tarjetas** → **Crear casa** (en un celular)
+3. Copian el código `AMOR-1234` y lo mandan por WhatsApp
+4. En el otro celular: **Unirme a esa casa**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Listo: lo que marque uno, lo ve el otro.
