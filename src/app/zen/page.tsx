@@ -133,15 +133,9 @@ export default function ZenPage() {
       )}
 
       <ul className="w-full max-w-sm space-y-2 text-left text-sm text-[var(--muted)]">
-        <li className="rounded-xl bg-white/50 px-3 py-2">
-          1. Hablen mirando la misma pantalla.
-        </li>
-        <li className="rounded-xl bg-white/50 px-3 py-2">
-          2. Marquen lo pagado juntos.
-        </li>
-        <li className="rounded-xl bg-white/50 px-3 py-2">
-          3. Si se calientan otra vez, vuelvan aquí.
-        </li>
+        <li>1. Hablen mirando la misma pantalla.</li>
+        <li>2. Marquen lo pagado juntos.</li>
+        <li>3. Si se calientan otra vez, vuelvan aquí.</li>
       </ul>
     </div>
   );

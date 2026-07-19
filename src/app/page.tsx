@@ -36,31 +36,31 @@ export default function HomePage() {
   const hasPurchases = data.purchases.length > 0;
 
   return (
-    <div className="animate-in space-y-6">
-      <header className="space-y-3">
+    <div className="animate-in space-y-5">
+      <header className="space-y-2">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-hot)]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--accent-hot)]">
             No Se Peleen
           </p>
           <HelpChip />
         </div>
-        <h1 className="font-[family-name:var(--font-display)] text-4xl font-extrabold leading-[1.05] tracking-tight text-[var(--ink)]">
+        <h1 className="font-[family-name:var(--font-display)] text-[2.35rem] font-extrabold leading-[1.02] tracking-tight text-[var(--ink)]">
           El amor supera
           <br />
           las cuotas
         </h1>
-        <p className="max-w-[22rem] text-[15px] leading-relaxed text-[var(--muted)]">
-          Aquí ven juntos qué toca pagar este mes. Toquen una cuota para marcarla
-          como pagada.
+        <p className="max-w-[22rem] text-[14px] leading-snug text-[var(--muted)]">
+          Aquí ven juntos qué hay que pagar este mes. Toquen una cuota para
+          marcarla como pagada.
         </p>
         {cloudEnabled && (
-          <p className="inline-flex rounded-full bg-[var(--mint)]/15 px-3 py-1 text-xs font-bold text-[var(--mint)]">
+          <p className="text-xs font-semibold text-[var(--mint)]">
             {syncStatus === "synced"
               ? "Misma agenda en los dos teléfonos ✓"
               : syncStatus === "connecting"
                 ? "Conectando…"
                 : syncStatus === "error"
-                  ? "Sin conexión (revisar internet)"
+                  ? "Sin conexión — revisen internet"
                   : "Agenda local"}
           </p>
         )}
@@ -80,7 +80,7 @@ export default function HomePage() {
         <StarterGuide
           step="2"
           title="Ahora sumen una compra"
-          body="Sirve con cuotas o pago único (débito/contado = 1 cuota). También pueden pegar el aviso del banco."
+          body="Sirve con cuotas o pago único. También pueden pegar el aviso del banco."
           cta="Sumar compra"
           href="/nueva"
         />
@@ -89,7 +89,7 @@ export default function HomePage() {
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"
-          className="btn btn-ghost min-h-11 min-w-11 px-3 py-2 text-base"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-lg text-[var(--ink)] hover:bg-white/50"
           onClick={() => setMonthKey(addMonths(monthKey, -1))}
           aria-label="Mes anterior"
         >
@@ -99,11 +99,11 @@ export default function HomePage() {
           <p className="font-[family-name:var(--font-display)] text-lg font-bold capitalize">
             {monthLabel(monthKey)}
           </p>
-          <p className="text-xs text-[var(--muted)]">lo que toca pagar</p>
+          <p className="text-xs text-[var(--muted)]">lo que hay que pagar</p>
         </div>
         <button
           type="button"
-          className="btn btn-ghost min-h-11 min-w-11 px-3 py-2 text-base"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-lg text-[var(--ink)] hover:bg-white/50"
           onClick={() => setMonthKey(addMonths(monthKey, 1))}
           aria-label="Mes siguiente"
         >
@@ -111,7 +111,7 @@ export default function HomePage() {
         </button>
       </div>
 
-      <section className="relative overflow-hidden rounded-[1.75rem] bg-[var(--ink)] px-5 py-5 text-white shadow-[0_20px_40px_-20px_rgba(26,39,68,0.55)]">
+      <section className="relative overflow-hidden rounded-[1.6rem] bg-[var(--ink)] px-5 py-5 text-white shadow-[0_20px_40px_-20px_rgba(26,39,68,0.55)]">
         <div
           className="pointer-events-none absolute -right-8 top-0 h-32 w-32 rounded-full bg-[var(--accent)]/30 blur-2xl"
           aria-hidden
@@ -122,41 +122,35 @@ export default function HomePage() {
         <p className="mt-1 font-[family-name:var(--font-display)] text-4xl font-extrabold tracking-tight">
           {formatMoney(totals.unpaid)}
         </p>
-        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm text-white/70">
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-white/70">
           <span>
-            Total del mes:{" "}
+            Total:{" "}
             <strong className="text-white">{formatMoney(totals.total)}</strong>
           </span>
           <span>
-            Ya pagaron:{" "}
+            Pagado:{" "}
             <strong className="text-[#b8e0d2]">{formatMoney(totals.paid)}</strong>
           </span>
         </div>
       </section>
 
-      {hasPurchases && items.length > 0 && (
-        <p className="px-1 text-sm font-semibold text-[var(--muted)]">
-          Toquen cada ítem para marcar “pagado” ✓
-        </p>
-      )}
-
       {groups.map((group, index) => (
         <section
           key={group.card.id}
-          className="animate-in space-y-3"
+          className="animate-in space-y-2"
           style={{ animationDelay: `${index * 60}ms` }}
         >
           <div className="flex items-end justify-between gap-3 px-1">
             <div className="flex items-center gap-2">
               <span
-                className="h-3 w-3 rounded-full"
+                className="h-2.5 w-2.5 rounded-full"
                 style={{ background: group.card.color }}
               />
               <div>
-                <h2 className="font-[family-name:var(--font-display)] text-lg font-bold">
+                <h2 className="font-[family-name:var(--font-display)] text-base font-bold">
                   {group.card.name}
                 </h2>
-                <p className="text-xs text-[var(--muted)]">
+                <p className="text-[11px] text-[var(--muted)]">
                   ••{group.card.lastFour} ·{" "}
                   {group.card.kind === "debito" ? "débito" : "crédito"}
                 </p>
@@ -166,7 +160,7 @@ export default function HomePage() {
               {formatMoney(group.unpaid)}
             </p>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {group.items.map((item) => (
               <InstallmentRow
                 key={`${item.purchase.id}-${item.installmentNumber}`}
@@ -187,7 +181,7 @@ export default function HomePage() {
       ))}
 
       {hasPurchases && items.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-[var(--line-strong)] bg-white/50 px-5 py-8 text-center">
+        <div className="px-1 py-8 text-center">
           <p className="font-[family-name:var(--font-display)] text-xl font-bold">
             Este mes no hay nada pendiente
           </p>
@@ -199,13 +193,13 @@ export default function HomePage() {
 
       <Link
         href="/zen"
-        className="block rounded-2xl border border-[var(--line)] bg-white/60 px-4 py-4 text-center transition hover:border-[var(--ink)]/25"
+        className="block px-1 py-3 text-center transition hover:opacity-80"
       >
         <p className="text-sm font-bold text-[var(--ink)]">
           ¿Ya empezó la discusión?
         </p>
-        <p className="mt-1 text-xs text-[var(--muted)]">
-          Entren al modo Zen antes de mencionar la tarjeta →
+        <p className="mt-0.5 text-xs text-[var(--muted)]">
+          Entren al modo Zen antes de pelear →
         </p>
       </Link>
     </div>
@@ -226,21 +220,21 @@ function StarterGuide({
   href: string;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-[var(--line)] bg-white/70 p-5">
+    <div className="space-y-3 py-1">
       <div className="flex gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] font-[family-name:var(--font-display)] text-lg font-extrabold text-[var(--ink)]">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] font-[family-name:var(--font-display)] text-base font-extrabold text-[var(--ink)]">
           {step}
         </span>
         <div>
-          <p className="font-[family-name:var(--font-display)] text-xl font-bold">
+          <p className="font-[family-name:var(--font-display)] text-lg font-bold">
             {title}
           </p>
-          <p className="mt-1 text-[15px] leading-relaxed text-[var(--muted)]">
+          <p className="mt-1 text-[14px] leading-snug text-[var(--muted)]">
             {body}
           </p>
         </div>
       </div>
-      <Link href={href} className="btn btn-primary mt-4 w-full text-base">
+      <Link href={href} className="btn btn-primary w-full text-base">
         {cta}
       </Link>
     </div>

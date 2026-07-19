@@ -69,12 +69,9 @@ export default function AyudaPage() {
         </button>
       </header>
 
-      <div className="space-y-3">
+      <div className="divide-y divide-[var(--line)]">
         {sections.map((s) => (
-          <article
-            key={s.title}
-            className="rounded-[1.35rem] border border-[var(--line)] bg-white/70 p-4"
-          >
+          <article key={s.title} className="py-4 first:pt-0">
             <h2 className="font-[family-name:var(--font-display)] text-lg font-bold text-[var(--ink)]">
               {s.title}
             </h2>
@@ -84,7 +81,7 @@ export default function AyudaPage() {
             {"href" in s && s.href && s.cta && (
               <Link
                 href={s.href}
-                className="mt-3 inline-flex text-sm font-bold text-[var(--mint)]"
+                className="mt-2 inline-flex text-sm font-bold text-[var(--mint)]"
               >
                 {s.cta} →
               </Link>

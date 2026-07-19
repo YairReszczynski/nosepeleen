@@ -12,7 +12,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative mx-auto min-h-dvh w-full max-w-lg">
       <div className="atmosphere" aria-hidden />
-      <main className="relative z-10 px-4 pb-28 pt-5">
+      <main className="relative z-10 px-4 pb-32 pt-4">
         {currentUser && (
           <div className="mb-3 flex items-center justify-between gap-2">
             <p className="text-sm text-[var(--muted)]">

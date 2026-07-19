@@ -11,14 +11,14 @@ export function HelpChip() {
       <button
         type="button"
         onClick={openTutorial}
-        className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line-strong)] bg-white/75 px-3 py-1.5 text-xs font-bold text-[var(--ink)]"
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--ink)] underline underline-offset-2"
       >
         <span aria-hidden>?</span>
         Ver tutorial
       </button>
       <Link
         href="/ayuda"
-        className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-[var(--ink)]/5 px-3 py-1.5 text-xs font-bold text-[var(--muted)]"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--muted)]"
       >
         Guía completa
       </Link>

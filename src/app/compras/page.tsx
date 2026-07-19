@@ -16,32 +16,35 @@ export default function ComprasPage() {
   const cardMap = new Map(data.cards.map((c) => [c.id, c]));
 
   return (
-    <div className="animate-in space-y-6">
+    <div className="animate-in space-y-5">
       <header className="flex items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--accent-hot)]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--accent-hot)]">
             Historial
           </p>
-          <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-extrabold tracking-tight">
+          <h1 className="mt-1 font-[family-name:var(--font-display)] text-[2rem] font-extrabold leading-none tracking-tight">
             Compras
           </h1>
         </div>
-        <Link href="/nueva" className="btn btn-accent py-2 text-sm">
+        <Link
+          href="/nueva"
+          className="text-sm font-bold text-[var(--ink)] underline underline-offset-2"
+        >
           + Sumar
         </Link>
       </header>
 
       {data.purchases.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--line-strong)] bg-white/50 px-5 py-10 text-center">
+        <div className="py-10 text-center">
           <p className="font-[family-name:var(--font-display)] text-xl font-bold">
             Agenda vacía
           </p>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Cuando compren algo (con o sin cuotas), aparece aquí.
+            Cuando compren algo, aparece aquí.
           </p>
         </div>
       ) : (
-        <ul className="space-y-3">
+        <ul className="divide-y divide-[var(--line)]">
           {data.purchases.map((p) => {
             const card = cardMap.get(p.cardId);
             const progress = purchaseProgress(p, data.payments);
@@ -49,10 +52,7 @@ export default function ComprasPage() {
               (progress.paidCount / Math.max(p.installments, 1)) * 100;
 
             return (
-              <li
-                key={p.id}
-                className="rounded-2xl border border-[var(--line)] bg-white/70 p-4"
-              >
+              <li key={p.id} className="py-4 first:pt-1">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate font-bold text-[var(--ink)]">
@@ -62,7 +62,7 @@ export default function ComprasPage() {
                       {card
                         ? `${card.name} ••${card.lastFour}`
                         : "Tarjeta borrada"}{" "}
-                      · compró {personLabel(p.boughtBy, data.household)}
+                      · {personLabel(p.boughtBy, data.household)}
                       {p.addedBy
                         ? ` · cargó ${personLabel(p.addedBy, data.household)}`
                         : ""}
@@ -86,7 +86,7 @@ export default function ComprasPage() {
                       quedan {formatMoney(progress.remainingAmount)}
                     </span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-[var(--line)]">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-[var(--line)]">
                     <div
                       className="h-full rounded-full bg-[var(--mint)] transition-all"
                       style={{ width: `${pct}%` }}
@@ -94,21 +94,21 @@ export default function ComprasPage() {
                   </div>
                   <p className="mt-2 text-xs text-[var(--muted)]">
                     {p.installments === 1
-                      ? `Pago único · día ${p.paymentDay || 10} · ${formatMoney(p.installmentAmount)} · ${p.startMonth}`
-                      : `${formatMoney(p.installmentAmount)} × ${p.installments} · día ${p.paymentDay || 10} · desde ${p.startMonth}`}
+                      ? `Pago único · día ${p.paymentDay || 10}`
+                      : `${formatMoney(p.installmentAmount)} × ${p.installments} · día ${p.paymentDay || 10}`}
                   </p>
                 </div>
 
                 <button
                   type="button"
-                  className="mt-3 text-xs font-bold text-[var(--accent-hot)]"
+                  className="mt-2 text-xs font-semibold text-[var(--accent-hot)]"
                   onClick={() => {
                     if (confirm(`¿Borrar “${p.description}”?`)) {
                       removePurchase(p.id);
                     }
                   }}
                 >
-                  Eliminar compra
+                  Eliminar
                 </button>
               </li>
             );

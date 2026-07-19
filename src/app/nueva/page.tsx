@@ -157,15 +157,15 @@ export default function NuevaPage() {
   }
 
   return (
-    <div className="animate-in space-y-6">
+    <div className="animate-in space-y-5">
       <header>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--accent-hot)]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--accent-hot)]">
           Nueva compra
         </p>
-        <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-extrabold tracking-tight">
+        <h1 className="mt-1 font-[family-name:var(--font-display)] text-[2rem] font-extrabold leading-none tracking-tight">
           Sumar compra
         </h1>
-        <p className="mt-2 text-[15px] leading-relaxed text-[var(--muted)]">
+        <p className="mt-2 max-w-[22rem] text-[14px] leading-snug text-[var(--muted)]">
           Crédito, débito, con cuotas o un solo pago. Peguen el aviso del banco
           o llénenlo a mano.
         </p>
@@ -327,7 +327,7 @@ export default function NuevaPage() {
         </div>
 
         {Number(installments) > 1 && (
-          <section className="space-y-3 rounded-2xl border border-[var(--line)] bg-white/70 p-4">
+          <section className="space-y-3 border-t border-[var(--line)] pt-4">
             <label className="flex cursor-pointer items-start gap-3">
               <input
                 type="checkbox"
