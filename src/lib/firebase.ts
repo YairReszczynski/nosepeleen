@@ -128,15 +128,27 @@ export function subscribeCloudHousehold(
 function sanitizeCloudData(raw: Record<string, unknown>): AppData {
   const base = createDefaultData();
   const household = (raw.household as AppData["household"]) ?? base.household;
+  const cards = Array.isArray(raw.cards)
+    ? (raw.cards as AppData["cards"]).map((c) => ({
+        ...c,
+        kind: c.kind === "debito" ? ("debito" as const) : ("credito" as const),
+      }))
+    : [];
   return {
     version: 1,
     household: {
       mamaName: household.mamaName || base.household.mamaName,
       papaName: household.papaName || base.household.papaName,
     },
-    cards: Array.isArray(raw.cards) ? (raw.cards as AppData["cards"]) : [],
+    cards,
     purchases: Array.isArray(raw.purchases)
-      ? (raw.purchases as AppData["purchases"])
+      ? (raw.purchases as AppData["purchases"]).map((p) => ({
+          ...p,
+          paymentDay:
+            typeof p.paymentDay === "number" && p.paymentDay >= 1
+              ? p.paymentDay
+              : 10,
+        }))
       : [],
     payments: Array.isArray(raw.payments)
       ? (raw.payments as AppData["payments"])

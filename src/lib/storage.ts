@@ -43,12 +43,23 @@ export function loadData(): AppData {
     // Migrar nombres genéricos viejos
     if (household.mamaName === "Mamá") household.mamaName = "Pamela";
     if (household.papaName === "Papá") household.papaName = "Itae";
+    const cards = (parsed.cards ?? []).map((c) => ({
+      ...c,
+      kind: c.kind === "debito" ? ("debito" as const) : ("credito" as const),
+    }));
+    const purchases = (parsed.purchases ?? []).map((p) => ({
+      ...p,
+      paymentDay:
+        typeof p.paymentDay === "number" && p.paymentDay >= 1
+          ? p.paymentDay
+          : 10,
+    }));
     return {
       ...createDefaultData(),
       ...parsed,
       household,
-      cards: parsed.cards ?? [],
-      purchases: parsed.purchases ?? [],
+      cards,
+      purchases,
       payments: parsed.payments ?? [],
     };
   } catch {

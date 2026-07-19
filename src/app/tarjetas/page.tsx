@@ -3,26 +3,18 @@
 import { useState, type FormEvent } from "react";
 import { useFinance } from "@/context/FinanceContext";
 import { CardVisual } from "@/components/CardVisual";
+import { HouseSyncPanel } from "@/components/HouseSyncPanel";
 import { personLabel } from "@/lib/finance";
-import type { Person } from "@/lib/types";
+import type { CardKind, Person } from "@/lib/types";
 
 export default function TarjetasPage() {
-  const {
-    ready,
-    data,
-    addCard,
-    removeCard,
-    updateHousehold,
-    exportJson,
-    importJson,
-  } = useFinance();
+  const { ready, data, addCard, removeCard, updateHousehold } = useFinance();
   const [name, setName] = useState("");
   const [lastFour, setLastFour] = useState("");
   const [owner, setOwner] = useState<Person>("mama");
+  const [kind, setKind] = useState<CardKind>("credito");
   const [dueDay, setDueDay] = useState("10");
   const [showForm, setShowForm] = useState(false);
-  const [syncOpen, setSyncOpen] = useState(false);
-  const [importText, setImportText] = useState("");
   const [msg, setMsg] = useState("");
 
   if (!ready) return null;
@@ -36,7 +28,7 @@ export default function TarjetasPage() {
     }
     const day = Number(dueDay);
     if (!day || day < 1 || day > 28) {
-      setMsg("Día de vencimiento entre 1 y 28.");
+      setMsg("Día entre 1 y 28, por favor.");
       return;
     }
     addCard({
@@ -44,35 +36,14 @@ export default function TarjetasPage() {
       lastFour: four,
       owner,
       dueDay: day,
+      kind,
     });
     setName("");
     setLastFour("");
     setDueDay("10");
+    setKind("credito");
     setShowForm(false);
     setMsg("");
-  }
-
-  function handleExport() {
-    const json = exportJson();
-    void navigator.clipboard.writeText(json).then(
-      () => setMsg("Copiado. Pegalo en el otro celular (Importar)."),
-      () => {
-        setImportText(json);
-        setSyncOpen(true);
-        setMsg("Copiá el texto de abajo y pasalo por WhatsApp.");
-      },
-    );
-  }
-
-  function handleImport() {
-    try {
-      importJson(importText);
-      setImportText("");
-      setSyncOpen(false);
-      setMsg("Listo: mismos datos en este celular.");
-    } catch {
-      setMsg("Ese texto no es un backup válido.");
-    }
   }
 
   return (
@@ -85,10 +56,12 @@ export default function TarjetasPage() {
           Tarjetas
         </h1>
         <p className="mt-2 text-[15px] leading-relaxed text-[var(--muted)]">
-          Acá cargan cada plástico. Después, cada compra se anota en una
-          tarjeta y al final del mes se ve claro qué toca pagar.
+          Crédito o débito. Cada compra se anota en un plástico y al final del
+          mes se ve claro qué toca pagar.
         </p>
       </header>
+
+      <HouseSyncPanel />
 
       <section className="grid grid-cols-2 gap-3 rounded-2xl border border-[var(--line)] bg-white/60 p-4">
         <div>
@@ -124,6 +97,7 @@ export default function TarjetasPage() {
               color={card.color}
               ownerLabel={personLabel(card.owner, data.household)}
               dueDay={card.dueDay}
+              kind={card.kind}
             />
             <button
               type="button"
@@ -162,11 +136,25 @@ export default function TarjetasPage() {
             <input
               id="cname"
               className="field"
-              placeholder="Visa Mamá, Master Papá…"
+              placeholder="Visa crédito, Débito banco…"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
             />
+          </div>
+          <div>
+            <label className="label" htmlFor="kind">
+              Tipo
+            </label>
+            <select
+              id="kind"
+              className="field"
+              value={kind}
+              onChange={(e) => setKind(e.target.value as CardKind)}
+            >
+              <option value="credito">Crédito</option>
+              <option value="debito">Débito</option>
+            </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -186,7 +174,7 @@ export default function TarjetasPage() {
             </div>
             <div>
               <label className="label" htmlFor="due">
-                Día vencimiento
+                {kind === "debito" ? "Día de pago" : "Día vencimiento"}
               </label>
               <input
                 id="due"
@@ -237,42 +225,6 @@ export default function TarjetasPage() {
           + Agregar tarjeta
         </button>
       )}
-
-      <section className="space-y-3 rounded-2xl border border-dashed border-[var(--line-strong)] bg-white/40 p-4">
-        <h2 className="font-[family-name:var(--font-display)] text-lg font-bold">
-          ¿Los dos tienen celular?
-        </h2>
-        <p className="text-[15px] leading-relaxed text-[var(--muted)]">
-          Los datos quedan en este teléfono. Para que el otro vea lo mismo:
-          toquen Exportar, manden el texto por WhatsApp, y en el otro celular
-          toquen Importar y péguenlo.
-        </p>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <button type="button" className="btn btn-ghost flex-1" onClick={handleExport}>
-            Exportar
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost flex-1"
-            onClick={() => setSyncOpen((v) => !v)}
-          >
-            Importar
-          </button>
-        </div>
-        {syncOpen && (
-          <div className="space-y-2">
-            <textarea
-              className="field min-h-[100px] font-mono text-xs"
-              placeholder="Pegá el backup JSON acá"
-              value={importText}
-              onChange={(e) => setImportText(e.target.value)}
-            />
-            <button type="button" className="btn btn-primary w-full" onClick={handleImport}>
-              Aplicar backup
-            </button>
-          </div>
-        )}
-      </section>
 
       {msg && (
         <p className="text-center text-sm font-semibold text-[var(--mint)]">

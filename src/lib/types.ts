@@ -1,5 +1,7 @@
 export type Person = "mama" | "papa" | "juntos";
 
+export type CardKind = "credito" | "debito";
+
 export type Card = {
   id: string;
   name: string;
@@ -7,6 +9,7 @@ export type Card = {
   color: string;
   owner: Person;
   dueDay: number;
+  kind: CardKind;
 };
 
 export type Purchase = {
@@ -19,6 +22,8 @@ export type Purchase = {
   boughtBy: Person;
   /** Primer mes de cuota en formato YYYY-MM */
   startMonth: string;
+  /** Día del mes en que se paga cada cuota (1-28) */
+  paymentDay: number;
   createdAt: string;
   notes?: string;
 };
@@ -50,4 +55,5 @@ export type MonthInstallment = {
   month: string;
   paid: boolean;
   isLast: boolean;
+  paymentDay: number;
 };

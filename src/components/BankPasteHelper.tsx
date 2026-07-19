@@ -5,17 +5,17 @@ import { useState } from "react";
 const steps = [
   {
     n: "1",
-    title: "Abrí la app del banco",
-    body: "Galicia, Santander, Mercado Pago, Ualá, lo que usen. Busquen el aviso de la compra o el historial de movimientos.",
+    title: "Abran la app del banco",
+    body: "Galicia, Santander, Mercado Pago, Ualá, o la que usen. Busquen el aviso de la compra o el historial de movimientos.",
   },
   {
     n: "2",
-    title: "Copiá el texto del aviso",
-    body: "Mantengan el dedo apretado sobre el mensaje hasta que aparezca “Copiar”. Si no deja copiar, anoten a mano el comercio, el monto y las cuotas.",
+    title: "Copien el texto del aviso",
+    body: "Mantengan el dedo apretado sobre el mensaje hasta que aparezca “Copiar”. Si no deja copiar, anoten a mano el comercio, el monto y si hubo cuotas.",
   },
   {
     n: "3",
-    title: "Pegá acá abajo",
+    title: "Péguenlo aquí abajo",
     body: "Vuelvan a esta pantalla, toquen el cuadro y elijan “Pegar”. Después toquen “Completar solo”.",
   },
 ];
@@ -74,12 +74,12 @@ export function BankPasteHelper({ value, onChange, onApply, appliedHint }: Props
 
       <div>
         <label className="label" htmlFor="bank-paste">
-          Pegá el aviso acá
+          Peguen el aviso aquí
         </label>
         <textarea
           id="bank-paste"
           className="field min-h-[100px] resize-y text-[15px] leading-relaxed"
-          placeholder='Ejemplo: "Compra Visa *4321 FALABELLA $120.000 en 6 cuotas"'
+          placeholder='Ejemplo: "Compra *4321 SUPER $25.000" o "... en 6 cuotas"'
           value={value}
           onChange={(e) => onChange(e.target.value)}
         />

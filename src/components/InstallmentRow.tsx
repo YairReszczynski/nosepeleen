@@ -49,9 +49,14 @@ export function InstallmentRow({ item, buyerLabel, onToggle }: Props) {
           {item.purchase.description}
         </p>
         <p className="mt-0.5 text-xs text-[var(--muted)]">
-          Cuota {item.installmentNumber} de {item.purchase.installments}
-          {item.isLast ? " · última" : ""} · {buyerLabel}
-          {item.paid ? " · pagada" : " · tocá para marcar"}
+          {item.purchase.installments === 1
+            ? "Pago único"
+            : `Cuota ${item.installmentNumber} de ${item.purchase.installments}${item.isLast ? " · última" : ""}`}
+          {" · "}
+          día {item.paymentDay}
+          {" · "}
+          {buyerLabel}
+          {item.paid ? " · pagada" : " · toquen para marcar"}
         </p>
       </div>
       <p className="shrink-0 font-[family-name:var(--font-display)] text-base font-bold text-[var(--ink)]">

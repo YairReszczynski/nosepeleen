@@ -4,6 +4,7 @@ type Props = {
   color: string;
   ownerLabel: string;
   dueDay?: number;
+  kind?: "credito" | "debito";
   compact?: boolean;
 };
 
@@ -13,6 +14,7 @@ export function CardVisual({
   color,
   ownerLabel,
   dueDay,
+  kind = "credito",
   compact,
 }: Props) {
   return (
@@ -37,7 +39,9 @@ export function CardVisual({
           <p className="font-[family-name:var(--font-display)] text-lg font-bold tracking-tight">
             {name}
           </p>
-          <p className="mt-1 text-xs text-white/75">{ownerLabel}</p>
+          <p className="mt-1 text-xs text-white/75">
+            {ownerLabel} · {kind === "debito" ? "Débito" : "Crédito"}
+          </p>
         </div>
         <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider">
           •• {lastFour}
@@ -45,7 +49,8 @@ export function CardVisual({
       </div>
       {!compact && dueDay != null && (
         <p className="relative mt-6 text-xs text-white/80">
-          Vence el día <strong className="text-white">{dueDay}</strong>
+          {kind === "debito" ? "Día de pago" : "Vence el día"}{" "}
+          <strong className="text-white">{dueDay}</strong>
         </p>
       )}
     </div>

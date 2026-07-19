@@ -1,5 +1,8 @@
 export const HOUSE_CODE_KEY = "nosepeleen-house-code";
 
+/** Una sola agenda compartida para Pamela e Itae. Sin códigos. */
+export const FAMILY_SYNC_ID = "AMOR-0001";
+
 export function loadHouseCode(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(HOUSE_CODE_KEY);

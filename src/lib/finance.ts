@@ -77,11 +77,13 @@ export function getInstallmentsForMonth(
         month,
         paid: isPaid(data.payments, purchase.id, installmentNumber),
         isLast: installmentNumber === purchase.installments,
+        paymentDay: purchase.paymentDay || card.dueDay || 1,
       });
     }
   }
 
   return result.sort((a, b) => {
+    if (a.paymentDay !== b.paymentDay) return a.paymentDay - b.paymentDay;
     if (a.card.name !== b.card.name) {
       return a.card.name.localeCompare(b.card.name);
     }

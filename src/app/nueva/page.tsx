@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useFinance } from "@/context/FinanceContext";
@@ -22,7 +22,7 @@ export default function NuevaPage() {
   const [cardId, setCardId] = useState("");
   const [boughtBy, setBoughtBy] = useState<Person>("juntos");
   const [startMonth, setStartMonth] = useState(currentMonthKey());
-  /** 1 = recién empiezan; 7 = van en la cuota 7 (las 1..6 ya pagadas) */
+  const [paymentDay, setPaymentDay] = useState("10");
   const [currentCuota, setCurrentCuota] = useState("1");
   const [isOldPurchase, setIsOldPurchase] = useState(false);
   const [error, setError] = useState("");
@@ -32,6 +32,12 @@ export default function NuevaPage() {
     () => data.cards.find((c) => c.id === (cardId || data.cards[0]?.id)),
     [data.cards, cardId],
   );
+
+  useEffect(() => {
+    if (selectedCard?.dueDay) {
+      setPaymentDay(String(selectedCard.dueDay));
+    }
+  }, [selectedCard?.id, selectedCard?.dueDay]);
 
   const cuotaPreview = useMemo(() => {
     const total = Number(totalAmount);
@@ -75,10 +81,10 @@ export default function NuevaPage() {
     }
     if (filled.length === 0) {
       setAppliedHint(
-        "No pude leer ese texto. Completen los campos de abajo a mano, sin drama.",
+        "No se pudo leer ese texto. Completen los campos de abajo a mano, sin problema.",
       );
     } else {
-      setAppliedHint(`Listo: completé ${filled.join(", ")}. Revisen abajo.`);
+      setAppliedHint(`Listo: se completó ${filled.join(", ")}. Revisen abajo.`);
     }
   }
 
@@ -87,6 +93,7 @@ export default function NuevaPage() {
     setError("");
     const total = Number(totalAmount);
     const n = Number(installments);
+    const day = Number(paymentDay);
     const card = cardId || data.cards[0]?.id;
 
     if (!card) {
@@ -94,15 +101,19 @@ export default function NuevaPage() {
       return;
     }
     if (!description.trim()) {
-      setError("Falta decir qué compraron (ej: heladera, Zara…).");
+      setError("Indiquen qué compraron (ej: refrigerador, zapatos…).");
       return;
     }
     if (!total || total <= 0) {
-      setError("El monto total tiene que ser mayor a 0.");
+      setError("El monto total debe ser mayor a 0.");
       return;
     }
     if (!n || n < 1 || n > 60) {
       setError("Las cuotas van de 1 a 60.");
+      return;
+    }
+    if (!day || day < 1 || day > 28) {
+      setError("El día de pago debe ser entre 1 y 28.");
       return;
     }
 
@@ -110,10 +121,9 @@ export default function NuevaPage() {
     if (isOldPurchase) {
       const current = Number(currentCuota);
       if (!current || current < 1 || current > n) {
-        setError(`La cuota actual tiene que ser entre 1 y ${n}.`);
+        setError(`La cuota actual debe ser entre 1 y ${n}.`);
         return;
       }
-      // Van en la cuota N → ya pagaron 1..(N-1)
       alreadyPaidCount = current - 1;
     }
 
@@ -124,6 +134,7 @@ export default function NuevaPage() {
       cardId: card,
       boughtBy,
       startMonth,
+      paymentDay: day,
       alreadyPaidCount,
     });
     router.push("/");
@@ -136,8 +147,7 @@ export default function NuevaPage() {
           Primero las tarjetas
         </h1>
         <p className="mx-auto max-w-xs text-[15px] leading-relaxed text-[var(--muted)]">
-          Antes de sumar una compra, carguen al menos una tarjeta. Es como
-          ponerle nombre a la billetera.
+          Antes de sumar una compra, agreguen al menos una tarjeta.
         </p>
         <Link href="/tarjetas" className="btn btn-primary text-base">
           Ir a Tarjetas
@@ -153,11 +163,11 @@ export default function NuevaPage() {
           Nueva compra
         </p>
         <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-extrabold tracking-tight">
-          Sumar cuotas
+          Sumar compra
         </h1>
         <p className="mt-2 text-[15px] leading-relaxed text-[var(--muted)]">
-          Opción A: pegar el aviso de la app del banco. Opción B: llenar los
-          casilleros a mano. Las dos sirven.
+          Crédito, débito, con cuotas o un solo pago. Peguen el aviso del banco
+          o llénenlo a mano.
         </p>
       </header>
 
@@ -184,7 +194,7 @@ export default function NuevaPage() {
           <input
             id="desc"
             className="field text-[16px]"
-            placeholder="Heladera, zapatillas, cena…"
+            placeholder="Refrigerador, zapatos, cena…"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
@@ -208,7 +218,7 @@ export default function NuevaPage() {
           </div>
           <div>
             <label className="label" htmlFor="cuotas">
-              ¿En cuántas cuotas?
+              ¿Cuántas cuotas?
             </label>
             <input
               id="cuotas"
@@ -217,16 +227,27 @@ export default function NuevaPage() {
               min={1}
               max={60}
               value={installments}
-              onChange={(e) => setInstallments(e.target.value)}
+              onChange={(e) => {
+                setInstallments(e.target.value);
+                if (Number(e.target.value) <= 1) {
+                  setIsOldPurchase(false);
+                  setCurrentCuota("1");
+                }
+              }}
               required
             />
+            <p className="mt-1.5 text-xs text-[var(--muted)]">
+              Pongan <strong>1</strong> si es débito o de contado (sin cuotas).
+            </p>
           </div>
         </div>
 
         {cuotaPreview != null && (
           <p className="rounded-xl bg-[var(--accent)]/25 px-3 py-3 text-center text-[15px] font-semibold">
-            Van a pagar ≈ {formatMoney(cuotaPreview)} por mes
-            {selectedCard ? ` con ${selectedCard.name}` : ""}
+            {Number(installments) === 1
+              ? `Pago único de ${formatMoney(cuotaPreview)}`
+              : `Van a pagar ≈ ${formatMoney(cuotaPreview)} por mes`}
+            {selectedCard ? ` · ${selectedCard.name}` : ""}
           </p>
         )}
 
@@ -242,10 +263,30 @@ export default function NuevaPage() {
           >
             {data.cards.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name} ••{c.lastFour}
+                {c.name} · {c.kind === "debito" ? "débito" : "crédito"} ••
+                {c.lastFour}
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="label" htmlFor="payDay">
+            ¿Qué día del mes se paga?
+          </label>
+          <input
+            id="payDay"
+            className="field text-[16px]"
+            inputMode="numeric"
+            min={1}
+            max={28}
+            value={paymentDay}
+            onChange={(e) => setPaymentDay(e.target.value)}
+            required
+          />
+          <p className="mt-1.5 text-xs text-[var(--muted)]">
+            Ejemplo: si pagan el día 10, pongan 10. Se usa para cada cuota.
+          </p>
         </div>
 
         <div>
@@ -266,7 +307,9 @@ export default function NuevaPage() {
 
         <div>
           <label className="label" htmlFor="start">
-            ¿En qué mes fue / es la primera cuota?
+            {Number(installments) === 1
+              ? "¿En qué mes se paga / se pagó?"
+              : "¿En qué mes fue / es la primera cuota?"}
           </label>
           <input
             id="start"
@@ -277,58 +320,61 @@ export default function NuevaPage() {
             required
           />
           <p className="mt-1.5 text-xs text-[var(--muted)]">
-            Si compraron el celular en enero, pongan enero (aunque hoy sea
-            julio).
+            {Number(installments) === 1
+              ? "Si es de este mes, déjenlo como está."
+              : "Si empezaron en enero, pongan enero (aunque hoy sea otro mes)."}
           </p>
         </div>
 
-        <section className="space-y-3 rounded-2xl border border-[var(--line)] bg-white/70 p-4">
-          <label className="flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              className="mt-1 h-5 w-5 accent-[var(--ink)]"
-              checked={isOldPurchase}
-              onChange={(e) => {
-                setIsOldPurchase(e.target.checked);
-                if (!e.target.checked) setCurrentCuota("1");
-              }}
-            />
-            <span>
-              <span className="block font-bold text-[var(--ink)]">
-                Ya venían pagando cuotas
-              </span>
-              <span className="mt-0.5 block text-sm text-[var(--muted)]">
-                Para compras viejas: celular en 12 cuotas y ahora van en la 7,
-                por ejemplo.
-              </span>
-            </span>
-          </label>
-
-          {isOldPurchase && (
-            <div>
-              <label className="label" htmlFor="current">
-                ¿En qué cuota van ahora?
-              </label>
+        {Number(installments) > 1 && (
+          <section className="space-y-3 rounded-2xl border border-[var(--line)] bg-white/70 p-4">
+            <label className="flex cursor-pointer items-start gap-3">
               <input
-                id="current"
-                className="field text-[16px]"
-                inputMode="numeric"
-                min={1}
-                max={Number(installments) || 60}
-                value={currentCuota}
-                onChange={(e) => setCurrentCuota(e.target.value)}
-                required={isOldPurchase}
+                type="checkbox"
+                className="mt-1 h-5 w-5 accent-[var(--ink)]"
+                checked={isOldPurchase}
+                onChange={(e) => {
+                  setIsOldPurchase(e.target.checked);
+                  if (!e.target.checked) setCurrentCuota("1");
+                }}
               />
-              {progressPreview && (
-                <p className="mt-2 rounded-xl bg-[var(--mint)]/10 px-3 py-2 text-sm font-semibold text-[var(--ink)]">
-                  Se marcan {progressPreview.paid} como ya pagadas. Quedan{" "}
-                  {progressPreview.remaining} (desde la cuota{" "}
-                  {progressPreview.current}).
-                </p>
-              )}
-            </div>
-          )}
-        </section>
+              <span>
+                <span className="block font-bold text-[var(--ink)]">
+                  Ya venían pagando cuotas
+                </span>
+                <span className="mt-0.5 block text-sm text-[var(--muted)]">
+                  Para compras antiguas: por ejemplo 12 cuotas y ahora van en la
+                  7.
+                </span>
+              </span>
+            </label>
+
+            {isOldPurchase && (
+              <div>
+                <label className="label" htmlFor="current">
+                  ¿En qué cuota van ahora?
+                </label>
+                <input
+                  id="current"
+                  className="field text-[16px]"
+                  inputMode="numeric"
+                  min={1}
+                  max={Number(installments) || 60}
+                  value={currentCuota}
+                  onChange={(e) => setCurrentCuota(e.target.value)}
+                  required={isOldPurchase}
+                />
+                {progressPreview && (
+                  <p className="mt-2 rounded-xl bg-[var(--mint)]/10 px-3 py-2 text-sm font-semibold text-[var(--ink)]">
+                    Se marcan {progressPreview.paid} como ya pagadas. Quedan{" "}
+                    {progressPreview.remaining} (desde la cuota{" "}
+                    {progressPreview.current}).
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
+        )}
 
         {error && (
           <p className="rounded-xl bg-[#fff0ee] px-3 py-3 text-center text-sm font-semibold text-[var(--accent-hot)]">

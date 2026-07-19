@@ -21,42 +21,33 @@ import {
   suggestCardColor,
 } from "@/lib/storage";
 import { currentMonthKey } from "@/lib/finance";
-import {
-  clearHouseCode,
-  loadHouseCode,
-  saveHouseCode,
-} from "@/lib/houseCode";
+import { FAMILY_SYNC_ID, saveHouseCode } from "@/lib/houseCode";
 import {
   createCloudHousehold,
   fetchCloudHousehold,
-  generateHouseCode,
   isFirebaseConfigured,
-  normalizeHouseCode,
   saveCloudHousehold,
   subscribeCloudHousehold,
 } from "@/lib/firebase";
 
-type SyncStatus = "local" | "connecting" | "synced" | "error" | "offline-cloud";
+type SyncStatus = "local" | "connecting" | "synced" | "error";
 
 type FinanceContextValue = {
   ready: boolean;
   data: AppData;
   monthKey: string;
   setMonthKey: (key: string) => void;
-  houseCode: string | null;
   syncStatus: SyncStatus;
   cloudEnabled: boolean;
-  createHouse: () => Promise<string>;
-  joinHouse: (code: string) => Promise<void>;
-  leaveHouse: () => void;
   updateHousehold: (h: Partial<Household>) => void;
-  addCard: (input: Omit<Card, "id" | "color"> & { color?: string }) => void;
+  addCard: (
+    input: Omit<Card, "id" | "color"> & { color?: string; kind?: Card["kind"] },
+  ) => void;
   updateCard: (id: string, patch: Partial<Card>) => void;
   removeCard: (id: string) => void;
   addPurchase: (
     input: Omit<Purchase, "id" | "createdAt" | "installmentAmount"> & {
       installmentAmount?: number;
-      /** Cuotas ya pagadas (ej: van en la 7 → se marcan 1..6) */
       alreadyPaidCount?: number;
     },
   ) => void;
@@ -73,19 +64,57 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [data, setData] = useState<AppData>(createDefaultData);
   const [monthKey, setMonthKey] = useState(currentMonthKey);
-  const [houseCode, setHouseCode] = useState<string | null>(null);
+  const [synced, setSynced] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("local");
   const applyingRemote = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const seeded = useRef(false);
   const cloudEnabled = isFirebaseConfigured();
 
+  // Carga local + enganche automático a la agenda familiar
   useEffect(() => {
     const local = loadData();
     setData(local);
-    const code = loadHouseCode();
-    setHouseCode(code);
-    setReady(true);
-  }, []);
+
+    if (!cloudEnabled) {
+      setSyncStatus("local");
+      setReady(true);
+      return;
+    }
+
+    let cancelled = false;
+    setSyncStatus("connecting");
+
+    void (async () => {
+      try {
+        saveHouseCode(FAMILY_SYNC_ID);
+        const remote = await fetchCloudHousehold(FAMILY_SYNC_ID);
+        if (cancelled) return;
+
+        if (!remote) {
+          await createCloudHousehold(FAMILY_SYNC_ID, local);
+          seeded.current = true;
+        } else {
+          applyingRemote.current = true;
+          setData(remote);
+          queueMicrotask(() => {
+            applyingRemote.current = false;
+          });
+        }
+
+        setSynced(true);
+        setSyncStatus("synced");
+      } catch {
+        if (!cancelled) setSyncStatus("error");
+      } finally {
+        if (!cancelled) setReady(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cloudEnabled]);
 
   // Persistencia local siempre
   useEffect(() => {
@@ -93,19 +122,16 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     saveData(data);
   }, [data, ready]);
 
-  // Suscripción Firestore
+  // Suscripción en vivo
   useEffect(() => {
-    if (!ready || !houseCode || !cloudEnabled) {
-      if (!houseCode) setSyncStatus("local");
-      return;
-    }
+    if (!ready || !cloudEnabled || !synced) return;
 
     setSyncStatus("connecting");
     let unsub = () => {};
 
     try {
       unsub = subscribeCloudHousehold(
-        houseCode,
+        FAMILY_SYNC_ID,
         (remote) => {
           applyingRemote.current = true;
           setData(remote);
@@ -121,16 +147,16 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     }
 
     return () => unsub();
-  }, [ready, houseCode, cloudEnabled]);
+  }, [ready, cloudEnabled, synced]);
 
-  // Guardar en la nube (debounce)
+  // Guardar en la nube
   useEffect(() => {
-    if (!ready || !houseCode || !cloudEnabled) return;
+    if (!ready || !cloudEnabled || !synced) return;
     if (applyingRemote.current) return;
 
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      void saveCloudHousehold(houseCode, data)
+      void saveCloudHousehold(FAMILY_SYNC_ID, data)
         .then(() => setSyncStatus("synced"))
         .catch(() => setSyncStatus("error"));
     }, 450);
@@ -138,53 +164,10 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
-  }, [data, ready, houseCode, cloudEnabled]);
+  }, [data, ready, cloudEnabled, synced]);
 
   const update = useCallback((fn: (prev: AppData) => AppData) => {
     setData(fn);
-  }, []);
-
-  const createHouse = useCallback(async () => {
-    if (!cloudEnabled) throw new Error("Firebase no configurado");
-    const code = generateHouseCode();
-    const current = loadData();
-    await createCloudHousehold(code, current);
-    saveHouseCode(code);
-    setHouseCode(code);
-    setData(current);
-    setSyncStatus("synced");
-    return code;
-  }, [cloudEnabled]);
-
-  const joinHouse = useCallback(
-    async (raw: string) => {
-      if (!cloudEnabled) throw new Error("Firebase no configurado");
-      const code = normalizeHouseCode(raw);
-      if (!code || code.length < 6) {
-        throw new Error("Código inválido");
-      }
-      setSyncStatus("connecting");
-      const remote = await fetchCloudHousehold(code);
-      if (!remote) {
-        setSyncStatus(houseCode ? "synced" : "local");
-        throw new Error("No existe una casa con ese código");
-      }
-      saveHouseCode(code);
-      applyingRemote.current = true;
-      setHouseCode(code);
-      setData(remote);
-      setSyncStatus("synced");
-      queueMicrotask(() => {
-        applyingRemote.current = false;
-      });
-    },
-    [cloudEnabled, houseCode],
-  );
-
-  const leaveHouse = useCallback(() => {
-    clearHouseCode();
-    setHouseCode(null);
-    setSyncStatus("local");
   }, []);
 
   const value = useMemo<FinanceContextValue>(
@@ -193,12 +176,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       data,
       monthKey,
       setMonthKey,
-      houseCode,
       syncStatus,
       cloudEnabled,
-      createHouse,
-      joinHouse,
-      leaveHouse,
       updateHousehold: (h) =>
         update((prev) => ({
           ...prev,
@@ -215,6 +194,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
               lastFour: input.lastFour,
               owner: input.owner,
               dueDay: input.dueDay,
+              kind: input.kind ?? "credito",
               color: input.color ?? suggestCardColor(prev.cards),
             },
           ],
@@ -244,10 +224,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           const id = createId();
           const alreadyPaid = Math.max(
             0,
-            Math.min(
-              input.alreadyPaidCount ?? 0,
-              input.installments,
-            ),
+            Math.min(input.alreadyPaidCount ?? 0, input.installments),
           );
           const now = new Date().toISOString();
           const paidMarks = Array.from({ length: alreadyPaid }, (_, i) => ({
@@ -267,6 +244,10 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
                 cardId: input.cardId,
                 boughtBy: input.boughtBy,
                 startMonth: input.startMonth,
+                paymentDay: Math.min(
+                  28,
+                  Math.max(1, input.paymentDay ?? 10),
+                ),
                 createdAt: now,
                 notes: input.notes,
               },
@@ -316,18 +297,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       importJson: (json) => setData(importData(json)),
       resetAll: () => setData(createDefaultData()),
     }),
-    [
-      ready,
-      data,
-      monthKey,
-      houseCode,
-      syncStatus,
-      cloudEnabled,
-      createHouse,
-      joinHouse,
-      leaveHouse,
-      update,
-    ],
+    [ready, data, monthKey, syncStatus, cloudEnabled, update],
   );
 
   return (

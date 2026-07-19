@@ -37,7 +37,7 @@ export default function ComprasPage() {
             Agenda vacía
           </p>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Cuando compren en cuotas, aparecen acá con el avance.
+            Cuando compren algo (con o sin cuotas), aparece aquí.
           </p>
         </div>
       ) : (
@@ -73,7 +73,11 @@ export default function ComprasPage() {
                 <div className="mt-3">
                   <div className="mb-1.5 flex justify-between text-xs font-semibold">
                     <span>
-                      {progress.paidCount}/{p.installments} cuotas
+                      {p.installments === 1
+                        ? progress.paidCount
+                          ? "Pagado"
+                          : "Pendiente"
+                        : `${progress.paidCount}/${p.installments} cuotas`}
                     </span>
                     <span className="text-[var(--muted)]">
                       quedan {formatMoney(progress.remainingAmount)}
@@ -86,8 +90,9 @@ export default function ComprasPage() {
                     />
                   </div>
                   <p className="mt-2 text-xs text-[var(--muted)]">
-                    {formatMoney(p.installmentAmount)} × {p.installments} ·
-                    desde {p.startMonth}
+                    {p.installments === 1
+                      ? `Pago único · día ${p.paymentDay || 10} · ${formatMoney(p.installmentAmount)} · ${p.startMonth}`
+                      : `${formatMoney(p.installmentAmount)} × ${p.installments} · día ${p.paymentDay || 10} · desde ${p.startMonth}`}
                   </p>
                 </div>
 

@@ -21,8 +21,8 @@ export default function HomePage() {
     monthKey,
     setMonthKey,
     togglePayment,
-    houseCode,
     syncStatus,
+    cloudEnabled,
   } = useFinance();
 
   if (!ready) {
@@ -50,18 +50,18 @@ export default function HomePage() {
           las cuotas
         </h1>
         <p className="max-w-[22rem] text-[15px] leading-relaxed text-[var(--muted)]">
-          Acá ven juntos qué toca pagar este mes. Toquen una cuota para marcarla
+          Aquí ven juntos qué toca pagar este mes. Toquen una cuota para marcarla
           como pagada.
         </p>
-        {houseCode && (
+        {cloudEnabled && (
           <p className="inline-flex rounded-full bg-[var(--mint)]/15 px-3 py-1 text-xs font-bold text-[var(--mint)]">
             {syncStatus === "synced"
-              ? `Casa ${houseCode} · en sync`
+              ? "Misma agenda en los dos teléfonos ✓"
               : syncStatus === "connecting"
-                ? "Conectando nube…"
+                ? "Conectando…"
                 : syncStatus === "error"
-                  ? "Sin sync (revisar internet)"
-                  : `Casa ${houseCode}`}
+                  ? "Sin conexión (revisar internet)"
+                  : "Agenda local"}
           </p>
         )}
       </header>
@@ -70,7 +70,7 @@ export default function HomePage() {
         <StarterGuide
           step="1"
           title="Empiecen por las tarjetas"
-          body="Carguen Visa, Mastercard o la que usen. Sin tarjeta no se puede anotar la compra."
+          body="Agreguen crédito o débito. Sin tarjeta no se puede anotar la compra."
           cta="Agregar tarjeta"
           href="/tarjetas"
         />
@@ -80,7 +80,7 @@ export default function HomePage() {
         <StarterGuide
           step="2"
           title="Ahora sumen una compra"
-          body="Cuando compren en cuotas, anótenlo acá. Pueden pegar el aviso de la app del banco."
+          body="Sirve con cuotas o pago único (débito/contado = 1 cuota). También pueden pegar el aviso del banco."
           cta="Sumar compra"
           href="/nueva"
         />
@@ -157,7 +157,8 @@ export default function HomePage() {
                   {group.card.name}
                 </h2>
                 <p className="text-xs text-[var(--muted)]">
-                  ••{group.card.lastFour} · vence el día {group.card.dueDay}
+                  ••{group.card.lastFour} ·{" "}
+                  {group.card.kind === "debito" ? "débito" : "crédito"}
                 </p>
               </div>
             </div>
@@ -183,7 +184,7 @@ export default function HomePage() {
       {hasPurchases && items.length === 0 && (
         <div className="rounded-2xl border border-dashed border-[var(--line-strong)] bg-white/50 px-5 py-8 text-center">
           <p className="font-[family-name:var(--font-display)] text-xl font-bold">
-            Este mes no hay cuotas
+            Este mes no hay nada pendiente
           </p>
           <p className="mt-2 text-sm text-[var(--muted)]">
             Cambien de mes con las flechas, o sumen una compra nueva.
@@ -199,7 +200,7 @@ export default function HomePage() {
           ¿Ya empezó la discusión?
         </p>
         <p className="mt-1 text-xs text-[var(--muted)]">
-          Entrá al modo Zen antes de mencionar la tarjeta →
+          Entren al modo Zen antes de mencionar la tarjeta →
         </p>
       </Link>
     </div>

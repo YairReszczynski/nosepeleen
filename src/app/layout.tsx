@@ -18,12 +18,23 @@ const syne = Syne({
 export const metadata: Metadata = {
   title: "No Se Peleen — el amor supera las cuotas",
   description:
-    "Agenda compartida de compras en cuotas para que el amor gane y la Visa no pelee.",
+    "Agenda compartida de gastos (crédito, débito, cuotas o al contado) para que el amor gane.",
   applicationName: "No Se Peleen",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
   appleWebApp: {
     capable: true,
     title: "No Se Peleen",
     statusBarStyle: "default",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
   },
 };
 

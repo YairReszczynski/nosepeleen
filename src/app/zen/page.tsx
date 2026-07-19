@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 const phrases = [
-  { in: "Inhalá…", out: "Exhalá… la cuota no define su amor." },
-  { in: "Inhalá…", out: "Exhalá… nadie compró eso para molestarte." },
-  { in: "Inhalá…", out: "Exhalá… después miran la app juntos." },
-  { in: "Inhalá…", out: "Exhalá… el resumen no es un ultimátum." },
-  { in: "Inhalá…", out: "Exhalá… son un equipo, no dos agendas." },
-  { in: "Inhalá…", out: "Exhalá… la Visa también quiere paz." },
+  { in: "Inhala…", out: "Exhala… la cuota no define su amor." },
+  { in: "Inhala…", out: "Exhala… nadie compró eso para molestarte." },
+  { in: "Inhala…", out: "Exhala… después miran la app juntos." },
+  { in: "Inhala…", out: "Exhala… el resumen no es un ultimátum." },
+  { in: "Inhala…", out: "Exhala… son un equipo, no dos agendas." },
+  { in: "Inhala…", out: "Exhala… la Visa también quiere paz." },
 ];
 
 type Phase = "idle" | "in" | "hold" | "out" | "done";
@@ -50,11 +50,11 @@ export default function ZenPage() {
     phase === "in"
       ? phrase.in
       : phase === "hold"
-        ? "Agarrá aire un segundo…"
+        ? "Mantén el aire un segundo…"
         : phase === "out"
           ? phrase.out
           : phase === "done"
-            ? "Listo. Ahora sí pueden hablar de plata."
+            ? "Listo. Ahora sí pueden hablar de dinero."
             : "Antes de pelear por la tarjeta";
 
   function start() {
@@ -118,7 +118,7 @@ export default function ZenPage() {
           </button>
           {phase === "done" && (
             <Link href="/" className="btn btn-accent w-full">
-              Volver a las cuotas
+              Volver a Este mes
             </Link>
           )}
         </div>
@@ -140,7 +140,7 @@ export default function ZenPage() {
           2. Marquen lo pagado juntos.
         </li>
         <li className="rounded-xl bg-white/50 px-3 py-2">
-          3. Si se calientan otra vez, vuelvan acá.
+          3. Si se calientan otra vez, vuelvan aquí.
         </li>
       </ul>
     </div>

@@ -1,4 +1,4 @@
-export const TUTORIAL_KEY = "nosepeleen-tutorial-v1";
+export const TUTORIAL_KEY = "nosepeleen-tutorial-v2";
 
 export type TutorialStep = {
   id: string;
@@ -14,31 +14,31 @@ export const tutorialSteps: TutorialStep[] = [
     id: "welcome",
     eyebrow: "Bienvenidos",
     title: "Esto es No Se Peleen",
-    body: "Es una agenda compartida para las compras en cuotas. Así los dos ven lo mismo: qué se compró, con qué tarjeta y qué cuota toca pagar este mes.",
+    body: "Es una agenda compartida de gastos: crédito, débito, con cuotas o de contado. Así los dos ven lo mismo y no discuten por quién anotó qué.",
     tip: "La idea: menos agendas aparte, menos peleas.",
     cta: "Siguiente",
   },
   {
     id: "tarjetas",
     eyebrow: "Paso 1",
-    title: "Primero carguen las tarjetas",
-    body: "En la pestaña Tarjetas agreguen cada plástico (Visa, Mastercard, etc.), los últimos 4 números y el día de vencimiento del resumen.",
-    tip: "Pueden ponerle nombre fácil: “Visa de María”, “Master de Juan”.",
+    title: "Primero agreguen las tarjetas",
+    body: "En Tarjetas agreguen cada plástico de crédito o débito, los últimos 4 números y el día del mes en que suelen pagar.",
+    tip: "Pónganle un nombre claro, por ejemplo: “Visa crédito”, “Débito del banco”.",
     cta: "Siguiente",
   },
   {
     id: "compra",
     eyebrow: "Paso 2",
-    title: "Cuando compren algo en cuotas",
-    body: "Vayan a Sumar. Pueden escribirlo a mano o pegar el aviso de la app del banco. Si ya venían pagando (ej: van en la cuota 7 de 12), activen “Ya venían pagando cuotas”.",
-    tip: "Pongan el mes de la primera cuota (aunque sea de enero) y en qué cuota están hoy.",
+    title: "Cuando compren algo",
+    body: "Vayan a Sumar. Sirve para cuotas y también para un solo pago (débito o de contado: pongan 1 cuota). Indiquen qué día del mes se paga. Pueden escribirlo a mano o pegar el aviso de la app del banco.",
+    tip: "Si ya venían pagando cuotas antiguas, activen “Ya venían pagando” e indiquen en qué cuota van.",
     cta: "Siguiente",
   },
   {
     id: "mes",
     eyebrow: "Paso 3",
     title: "Cada mes, marquen lo pagado",
-    body: "En Este mes aparece todo lo que toca pagar, agrupado por tarjeta. Toquen cada cuota cuando la paguen: se tacha y baja el pendiente.",
+    body: "En Este mes aparece lo que toca pagar, con el día de pago. Toquen cuando lo paguen: se tacha y baja el pendiente.",
     tip: "Háganlo juntos mirando la misma pantalla. Fin de la discusión.",
     cta: "Siguiente",
   },
@@ -46,8 +46,8 @@ export const tutorialSteps: TutorialStep[] = [
     id: "zen",
     eyebrow: "Extra",
     title: "Si ya se enojaron…",
-    body: "En Zen hay una respiración corta para calmarse antes de hablar de plata. Suena a chiste, pero ayuda.",
-    tip: "Después vuelven a Este mes y siguen marcando.",
+    body: "En Zen hay una respiración corta para calmarse antes de hablar de dinero. Suena a chiste, pero ayuda.",
+    tip: "Después vuelvan a Este mes y sigan marcando.",
     cta: "¡Empezar!",
   },
 ];
