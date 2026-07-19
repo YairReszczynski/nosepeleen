@@ -10,6 +10,8 @@ export type Card = {
   owner: Person;
   dueDay: number;
   kind: CardKind;
+  /** Quién la cargó en la app (Pamela / Itae) */
+  addedBy?: Exclude<Person, "juntos">;
 };
 
 export type Purchase = {
@@ -26,12 +28,16 @@ export type Purchase = {
   paymentDay: number;
   createdAt: string;
   notes?: string;
+  /** Quién la cargó en la app */
+  addedBy?: Exclude<Person, "juntos">;
 };
 
 export type PaymentMark = {
   purchaseId: string;
   installmentNumber: number;
   paidAt: string;
+  /** Quién marcó el pago */
+  markedBy?: Exclude<Person, "juntos">;
 };
 
 export type Household = {
@@ -56,4 +62,5 @@ export type MonthInstallment = {
   paid: boolean;
   isLast: boolean;
   paymentDay: number;
+  markedBy?: Exclude<Person, "juntos">;
 };

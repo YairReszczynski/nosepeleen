@@ -62,7 +62,10 @@ export default function ComprasPage() {
                       {card
                         ? `${card.name} ••${card.lastFour}`
                         : "Tarjeta borrada"}{" "}
-                      · {personLabel(p.boughtBy, data.household)}
+                      · compró {personLabel(p.boughtBy, data.household)}
+                      {p.addedBy
+                        ? ` · cargó ${personLabel(p.addedBy, data.household)}`
+                        : ""}
                     </p>
                   </div>
                   <p className="shrink-0 font-[family-name:var(--font-display)] font-bold">

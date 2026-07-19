@@ -69,15 +69,21 @@ export function getInstallmentsForMonth(
       const month = addMonths(purchase.startMonth, i);
       if (month !== monthKey) continue;
       const installmentNumber = i + 1;
+      const payment = data.payments.find(
+        (p) =>
+          p.purchaseId === purchase.id &&
+          p.installmentNumber === installmentNumber,
+      );
       result.push({
         purchase,
         card,
         installmentNumber,
         amount: purchase.installmentAmount,
         month,
-        paid: isPaid(data.payments, purchase.id, installmentNumber),
+        paid: Boolean(payment),
         isLast: installmentNumber === purchase.installments,
         paymentDay: purchase.paymentDay || card.dueDay || 1,
+        markedBy: payment?.markedBy,
       });
     }
   }

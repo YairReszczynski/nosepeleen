@@ -172,6 +172,11 @@ export default function HomePage() {
                 key={`${item.purchase.id}-${item.installmentNumber}`}
                 item={item}
                 buyerLabel={personLabel(item.purchase.boughtBy, data.household)}
+                markedByLabel={
+                  item.markedBy
+                    ? personLabel(item.markedBy, data.household)
+                    : undefined
+                }
                 onToggle={() =>
                   togglePayment(item.purchase.id, item.installmentNumber)
                 }

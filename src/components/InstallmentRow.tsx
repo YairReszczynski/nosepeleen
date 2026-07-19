@@ -6,10 +6,16 @@ import { formatMoney } from "@/lib/finance";
 type Props = {
   item: MonthInstallment;
   buyerLabel: string;
+  markedByLabel?: string;
   onToggle: () => void;
 };
 
-export function InstallmentRow({ item, buyerLabel, onToggle }: Props) {
+export function InstallmentRow({
+  item,
+  buyerLabel,
+  markedByLabel,
+  onToggle,
+}: Props) {
   return (
     <button
       type="button"
@@ -56,7 +62,11 @@ export function InstallmentRow({ item, buyerLabel, onToggle }: Props) {
           día {item.paymentDay}
           {" · "}
           {buyerLabel}
-          {item.paid ? " · pagada" : " · toquen para marcar"}
+          {item.paid
+            ? markedByLabel
+              ? ` · pagó ${markedByLabel}`
+              : " · pagada"
+            : " · toquen para marcar"}
         </p>
       </div>
       <p className="shrink-0 font-[family-name:var(--font-display)] text-base font-bold text-[var(--ink)]">
